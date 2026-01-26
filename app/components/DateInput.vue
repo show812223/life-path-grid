@@ -45,9 +45,6 @@ const selectedDay = ref<number>(1)
 // 從生日自動推算的星座
 const autoZodiac = computed(() => getZodiacByDate(selectedMonth.value, selectedDay.value))
 
-// 使用者選擇的星座（預設為自動推算）
-const selectedZodiac = ref<ZodiacSign>(autoZodiac.value)
-
 // 計算當月天數
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
@@ -61,11 +58,6 @@ watch([selectedYear, selectedMonth], () => {
   }
 })
 
-// 監聽月日變化，自動更新星座
-watch([selectedMonth, selectedDay], () => {
-  selectedZodiac.value = autoZodiac.value
-})
-
 // 觸發計算
 function handleCalculate() {
   emit(
@@ -75,7 +67,7 @@ function handleCalculate() {
       month: selectedMonth.value,
       day: selectedDay.value
     },
-    selectedZodiac.value
+    autoZodiac.value
   )
 }
 </script>
@@ -117,14 +109,6 @@ function handleCalculate() {
           開始計算
         </button>
       </div>
-    </div>
-
-    <!-- 星座選擇器 -->
-    <div class="mt-4">
-      <ZodiacSelector
-        v-model="selectedZodiac"
-        :auto-zodiac="autoZodiac"
-      />
     </div>
   </div>
 </template>
