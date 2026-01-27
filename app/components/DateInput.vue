@@ -2,6 +2,14 @@
 import type { BirthDate, ZodiacSign } from '~/shared/types'
 import { getZodiacByDate } from '~/shared/constants/zodiacData'
 
+interface Props {
+  loading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false
+})
+
 const emit = defineEmits<{
   calculate: [date: BirthDate, zodiac: ZodiacSign]
 }>()
@@ -45,9 +53,6 @@ const selectedDay = ref<number>(1)
 // 從生日自動推算的星座
 const autoZodiac = computed(() => getZodiacByDate(selectedMonth.value, selectedDay.value))
 
-// 使用者選擇的星座（預設為自動推算）
-const selectedZodiac = ref<ZodiacSign>(autoZodiac.value)
-
 // 計算當月天數
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
@@ -61,11 +66,6 @@ watch([selectedYear, selectedMonth], () => {
   }
 })
 
-// 監聽月日變化，自動更新星座
-watch([selectedMonth, selectedDay], () => {
-  selectedZodiac.value = autoZodiac.value
-})
-
 // 觸發計算
 function handleCalculate() {
   emit(
@@ -75,7 +75,7 @@ function handleCalculate() {
       month: selectedMonth.value,
       day: selectedDay.value
     },
-    selectedZodiac.value
+    autoZodiac.value
   )
 }
 </script>
@@ -111,20 +111,16 @@ function handleCalculate() {
         <label class="input-label md:opacity-0">計算</label>
         <button
           class="btn btn-primary w-full py-3"
+          :disabled="props.loading"
           @click="handleCalculate"
         >
-          <Icon icon="mdi:sparkles" class="w-5 h-5 mr-2" />
-          開始計算
+          <Icon
+            :icon="props.loading ? 'mdi:loading' : 'mdi:sparkles'"
+            :class="['w-5 h-5 mr-2', { 'animate-spin': props.loading }]"
+          />
+          {{ props.loading ? '計算中...' : '開始計算' }}
         </button>
       </div>
-    </div>
-
-    <!-- 星座選擇器 -->
-    <div class="mt-4">
-      <ZodiacSelector
-        v-model="selectedZodiac"
-        :auto-zodiac="autoZodiac"
-      />
     </div>
   </div>
 </template>

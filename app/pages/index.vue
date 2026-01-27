@@ -5,6 +5,7 @@ import { useLifePathCalculator } from '~/composables/useLifePathCalculator'
 const { result, calculate, calcPersonalYear } = useLifePathCalculator()
 
 const hasResult = computed(() => result.value !== null)
+const isLoading = ref(false)
 
 // 儲存生日與星座資訊以供流年數計算
 const birthDate = ref<BirthDate | null>(null)
@@ -12,7 +13,12 @@ const selectedZodiac = ref<ZodiacSign | null>(null)
 const personalYear = ref<PersonalYearNumber | null>(null)
 const currentYear = new Date().getFullYear()
 
-function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
+async function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
+  isLoading.value = true
+
+  // 短暫延遲以顯示 loading 動畫
+  await new Promise(resolve => setTimeout(resolve, 800))
+
   birthDate.value = date
   selectedZodiac.value = zodiac
   // 計算當年流年數
@@ -20,6 +26,8 @@ function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
   personalYear.value = pyResult
   // 計算主命數與九宮格（包含流年數）
   calculate(date, zodiac, pyResult.number)
+
+  isLoading.value = false
 }
 
 function handleChangeYear(year: number) {
@@ -43,7 +51,7 @@ function handleChangeYear(year: number) {
 
       <!-- 日期輸入 -->
       <div class="input-section glass-card mb-8 p-6">
-        <DateInput @calculate="handleCalculate" />
+        <DateInput :loading="isLoading" @calculate="handleCalculate" />
       </div>
 
       <!-- 結果區域 -->
