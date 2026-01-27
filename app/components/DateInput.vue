@@ -2,6 +2,14 @@
 import type { BirthDate, ZodiacSign } from '~/shared/types'
 import { getZodiacByDate } from '~/shared/constants/zodiacData'
 
+interface Props {
+  loading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false
+})
+
 const emit = defineEmits<{
   calculate: [date: BirthDate, zodiac: ZodiacSign]
 }>()
@@ -103,10 +111,14 @@ function handleCalculate() {
         <label class="input-label md:opacity-0">計算</label>
         <button
           class="btn btn-primary w-full py-3"
+          :disabled="props.loading"
           @click="handleCalculate"
         >
-          <Icon icon="mdi:sparkles" class="w-5 h-5 mr-2" />
-          開始計算
+          <Icon
+            :icon="props.loading ? 'mdi:loading' : 'mdi:sparkles'"
+            :class="['w-5 h-5 mr-2', { 'animate-spin': props.loading }]"
+          />
+          {{ props.loading ? '計算中...' : '開始計算' }}
         </button>
       </div>
     </div>
