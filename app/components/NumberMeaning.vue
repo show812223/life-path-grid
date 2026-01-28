@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard, NTag } from 'naive-ui'
 import { getNumberMeaning } from '~/shared/constants/numberMeanings'
 
 interface Props {
@@ -11,7 +12,7 @@ const meaning = computed(() => getNumberMeaning(props.number))
 </script>
 
 <template>
-  <div class="number-meaning glass-card" v-if="meaning">
+  <NCard class="number-meaning" :bordered="false" v-if="meaning">
     <div class="section-header">
       <Icon icon="mdi:book-open-page-variant" class="w-5 h-5 mr-2 text-primary" />
       <span class="section-title">主命數詳細解讀</span>
@@ -27,13 +28,15 @@ const meaning = computed(() => getNumberMeaning(props.number))
             <span>優勢特質</span>
           </div>
           <div class="trait-list">
-            <span
+            <NTag
               v-for="strength in meaning.strengths"
               :key="strength"
-              class="chip chip-success m-1"
+              type="success"
+              size="small"
+              class="m-1"
             >
               {{ strength }}
-            </span>
+            </NTag>
           </div>
         </div>
 
@@ -43,25 +46,28 @@ const meaning = computed(() => getNumberMeaning(props.number))
             <span>成長課題</span>
           </div>
           <div class="trait-list">
-            <span
+            <NTag
               v-for="challenge in meaning.challenges"
               :key="challenge"
-              class="chip chip-warning m-1"
+              type="warning"
+              size="small"
+              class="m-1"
             >
               {{ challenge }}
-            </span>
+            </NTag>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
 
 .number-meaning {
-  @apply p-5;
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .section-header {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard, NTag, NCollapseTransition } from 'naive-ui'
 import type { Connection } from '~/shared/types'
 import { getConnectionMeaning } from '~/shared/constants/connectionMeanings'
 
@@ -25,13 +26,13 @@ function toggleConnection(id: string) {
 </script>
 
 <template>
-  <div class="connection-analysis glass-card">
+  <NCard class="connection-analysis" :bordered="false">
     <div class="section-header">
       <Icon icon="mdi:vector-line" class="w-5 h-5 mr-2 text-accent" />
       <span class="section-title">連線分析</span>
-      <span class="chip chip-primary ml-2 text-sm">
+      <NTag type="primary" size="small" class="ml-2">
         {{ activeConnections.length }} / {{ connections.length }}
-      </span>
+      </NTag>
     </div>
 
     <div v-if="activeConnections.length === 0" class="no-connections">
@@ -52,14 +53,13 @@ function toggleConnection(id: string) {
             <span class="connection-numbers">{{ conn.numbers.join(' - ') }}</span>
           </div>
           <div class="connection-type">
-            <span
-              :class="[
-                'chip text-xs',
-                conn.type === 'diagonal' ? 'chip-lavender' : 'chip-primary'
-              ]"
+            <NTag
+              :type="conn.type === 'diagonal' ? 'default' : 'primary'"
+              size="small"
+              :color="conn.type === 'diagonal' ? { color: 'rgba(197, 180, 227, 0.2)', textColor: '#9B8AC4' } : undefined"
             >
               {{ conn.type === 'horizontal' ? '橫線' : conn.type === 'vertical' ? '縱線' : '斜線' }}
-            </span>
+            </NTag>
           </div>
         </div>
       </div>
@@ -85,20 +85,22 @@ function toggleConnection(id: string) {
               class="w-5 h-5 text-text-muted"
             />
           </button>
-          <Transition name="slide-fade">
-            <div v-if="expandedConnections[conn.id]" class="meaning-content">
+          <NCollapseTransition :show="expandedConnections[conn.id]">
+            <div class="meaning-content">
               <p class="description">{{ getConnectionDetails(conn)?.description }}</p>
               <div class="traits">
-                <span
+                <NTag
                   v-for="trait in getConnectionDetails(conn)?.traits"
                   :key="trait"
-                  class="chip chip-accent m-1"
+                  type="success"
+                  size="small"
+                  class="m-1"
                 >
                   {{ trait }}
-                </span>
+                </NTag>
               </div>
             </div>
-          </Transition>
+          </NCollapseTransition>
         </div>
       </div>
     </div>
@@ -118,8 +120,8 @@ function toggleConnection(id: string) {
           class="w-5 h-5 text-text-muted"
         />
       </button>
-      <Transition name="slide-fade">
-        <div v-if="showInactiveConnections" class="inactive-list">
+      <NCollapseTransition :show="showInactiveConnections">
+        <div class="inactive-list">
           <div
             v-for="conn in inactiveConnections"
             :key="conn.id"
@@ -129,16 +131,17 @@ function toggleConnection(id: string) {
             <span class="conn-numbers">{{ conn.numbers.join(' - ') }}</span>
           </div>
         </div>
-      </Transition>
+      </NCollapseTransition>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
 
 .connection-analysis {
-  @apply p-5;
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .section-header {
@@ -185,6 +188,14 @@ function toggleConnection(id: string) {
 
 .connection-card .connection-type {
   @apply mt-2;
+}
+
+.disclosure-button {
+  @apply flex w-full items-center justify-between px-4 py-3
+         text-left font-medium text-text-primary
+         bg-surface-variant rounded-soft
+         transition-all duration-200 cursor-pointer
+         hover:bg-surface-variant/80;
 }
 
 .meaning-panel {

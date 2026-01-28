@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NSelect, NCard, NCollapseTransition } from 'naive-ui'
 import type { PersonalYearNumber } from '~/shared/types'
 
 interface Props {
@@ -38,7 +39,7 @@ const showCalculation = ref(false)
 </script>
 
 <template>
-  <div class="personal-year glass-card p-4">
+  <NCard class="personal-year" :bordered="false">
     <div class="section-header mb-3">
       <Icon icon="mdi:calendar-clock" class="w-5 h-5 mr-2 text-warning" />
       <span class="section-title">流年數</span>
@@ -46,10 +47,10 @@ const showCalculation = ref(false)
 
     <!-- 年份選擇 -->
     <div class="year-selector mb-4">
-      <UiBaseSelect
-        :model-value="selectedYear"
+      <NSelect
+        :value="selectedYear"
         :options="yearOptions"
-        @update:model-value="handleYearChange"
+        @update:value="handleYearChange"
       />
     </div>
 
@@ -74,8 +75,8 @@ const showCalculation = ref(false)
             class="w-5 h-5 text-text-muted transition-transform duration-200"
           />
         </button>
-        <Transition name="slide-fade">
-          <div v-if="showCalculation" class="calculation-steps mt-2">
+        <NCollapseTransition :show="showCalculation">
+          <div class="calculation-steps mt-2">
             <div
               v-for="(step, index) in personalYear.calculationSteps"
               :key="index"
@@ -84,14 +85,19 @@ const showCalculation = ref(false)
               {{ step }}
             </div>
           </div>
-        </Transition>
+        </NCollapseTransition>
       </div>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
+
+.personal-year {
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
+}
 
 .section-header {
   @apply flex items-center;
@@ -118,6 +124,14 @@ const showCalculation = ref(false)
          font-serif text-3xl font-bold text-text-primary rounded-2xl;
   background: linear-gradient(135deg, #8FB996, #A8CCAF);
   box-shadow: 0 4px 16px rgba(143, 185, 150, 0.35);
+}
+
+.disclosure-button {
+  @apply flex w-full items-center justify-between px-4 py-3
+         text-left font-medium text-text-primary
+         bg-surface-variant rounded-soft
+         transition-all duration-200 cursor-pointer
+         hover:bg-surface-variant/80;
 }
 
 .calculation-steps {

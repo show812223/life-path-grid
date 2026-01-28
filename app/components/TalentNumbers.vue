@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard } from 'naive-ui'
 import type { TalentNumbers } from '~/shared/types'
 
 interface Props {
@@ -9,7 +10,7 @@ defineProps<Props>()
 </script>
 
 <template>
-  <div class="talent-numbers glass-card p-4">
+  <NCard class="talent-numbers" :bordered="false">
     <div class="section-header mb-3">
       <Icon icon="mdi:lightbulb-on" class="w-5 h-5 mr-2 text-accent" />
       <span class="section-title">天賦數</span>
@@ -41,11 +42,16 @@ defineProps<Props>()
         </template>
       </p>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
+
+.talent-numbers {
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
+}
 
 .section-header {
   @apply flex items-center;

@@ -8,6 +8,11 @@ export default defineNuxtConfig({
     compatibilityVersion: 4
   },
 
+  // Build configuration for Naive UI
+  build: {
+    transpile: ['naive-ui', 'vueuc', '@css-render/vue3-ssr']
+  },
+
   // CSS - 直接引入 Tailwind CSS
   css: ['~/assets/styles/tailwind.css'],
 
