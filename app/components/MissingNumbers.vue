@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard, NCollapseTransition } from 'naive-ui'
 import { getMissingNumberMeaning } from '~/shared/constants/numberMeanings'
 
 interface Props {
@@ -23,7 +24,7 @@ function togglePanel(num: number) {
 </script>
 
 <template>
-  <div class="missing-numbers glass-card">
+  <NCard class="missing-numbers" :bordered="false">
     <div class="section-header">
       <Icon icon="mdi:alert-circle-outline" class="w-5 h-5 mr-2 text-warning" />
       <span class="section-title">缺數分析</span>
@@ -64,26 +65,27 @@ function togglePanel(num: number) {
               class="w-5 h-5 text-text-muted"
             />
           </button>
-          <Transition name="slide-fade">
-            <div v-if="expandedPanels[item.number]" class="meaning-content">
+          <NCollapseTransition :show="expandedPanels[item.number]">
+            <div class="meaning-content">
               <p class="description">{{ item.meaning?.description }}</p>
               <div class="suggestion">
                 <Icon icon="mdi:lightbulb-outline" class="w-4 h-4 mr-1 text-primary flex-shrink-0 mt-0.5" />
                 <span><strong>建議：</strong>{{ item.meaning?.suggestion }}</span>
               </div>
             </div>
-          </Transition>
+          </NCollapseTransition>
         </div>
       </div>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
 
 .missing-numbers {
-  @apply p-5;
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .section-header {
@@ -111,6 +113,14 @@ function togglePanel(num: number) {
          font-serif text-lg font-semibold text-text-muted
          bg-surface-variant border-2 border-dashed border-border rounded-[10px]
          transition-all duration-300 hover:border-primary hover:bg-primary/10;
+}
+
+.disclosure-button {
+  @apply flex w-full items-center justify-between px-4 py-3
+         text-left font-medium text-text-primary
+         bg-surface-variant rounded-soft
+         transition-all duration-200 cursor-pointer
+         hover:bg-surface-variant/80;
 }
 
 .meaning-panel {

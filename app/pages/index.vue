@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard, NTag } from 'naive-ui'
 import type { BirthDate, ZodiacSign, PersonalYearNumber } from '~/shared/types'
 import { useLifePathCalculator } from '~/composables/useLifePathCalculator'
 
@@ -50,9 +51,9 @@ function handleChangeYear(year: number) {
       </div>
 
       <!-- 日期輸入 -->
-      <div class="input-section glass-card mb-8 p-6">
+      <NCard class="input-section mb-8" :bordered="false">
         <DateInput :loading="isLoading" @calculate="handleCalculate" />
-      </div>
+      </NCard>
 
       <!-- 結果區域 -->
       <Transition name="fade-up">
@@ -60,17 +61,19 @@ function handleChangeYear(year: number) {
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- 左側：九宮格 -->
             <div class="lg:col-span-5 xl:col-span-4">
-              <div class="glass-card mb-6">
-                <div class="section-header p-4 pb-0">
-                  <Icon icon="mdi:grid" class="w-5 h-5 mr-2 text-primary" />
-                  <span class="section-title">九宮格</span>
-                </div>
+              <NCard class="mb-6" :bordered="false">
+                <template #header>
+                  <div class="section-header">
+                    <Icon icon="mdi:grid" class="w-5 h-5 mr-2 text-primary" />
+                    <span class="section-title">九宮格</span>
+                  </div>
+                </template>
                 <LifePathGrid
                   :grid-data="result.gridData"
                   :connections="result.connections"
                 />
                 <GridLegend />
-              </div>
+              </NCard>
             </div>
 
             <!-- 右側：主命數 + 天賦數 + 缺數 -->
@@ -89,7 +92,7 @@ function handleChangeYear(year: number) {
                 />
 
                 <!-- 星座資訊 -->
-                <div v-if="result.zodiacInfo" class="zodiac-info glass-card p-4 mb-6">
+                <NCard v-if="result.zodiacInfo" class="zodiac-info mb-6" :bordered="false">
                   <div class="section-header mb-2">
                     <Icon :icon="`mdi:zodiac-${result.zodiacInfo.sign}`" class="w-5 h-5 mr-2 text-info" />
                     <span class="section-title">星座數</span>
@@ -97,11 +100,11 @@ function handleChangeYear(year: number) {
                   <div class="zodiac-display">
                     <span class="zodiac-name">{{ result.zodiacInfo.name }}</span>
                     <span class="zodiac-date-range">（{{ result.zodiacInfo.dateRange }}）</span>
-                    <span class="chip chip-info ml-2 text-sm">
+                    <NTag type="info" size="small" class="ml-2">
                       {{ result.zodiacNumber }}
-                    </span>
+                    </NTag>
                   </div>
-                </div>
+                </NCard>
 
                 <!-- 流年數 -->
                 <PersonalYearNumber
@@ -169,7 +172,8 @@ function handleChangeYear(year: number) {
 }
 
 .input-section {
-  @apply max-w-3xl mx-auto;
+  @apply max-w-3xl mx-auto backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .results-section {
@@ -182,6 +186,11 @@ function handleChangeYear(year: number) {
 
 .section-title {
   @apply font-serif text-lg font-semibold;
+}
+
+.zodiac-info {
+  @apply backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .zodiac-info .zodiac-display {

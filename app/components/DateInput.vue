@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NSelect, NButton } from 'naive-ui'
 import type { BirthDate, ZodiacSign } from '~/shared/types'
 import { getZodiacByDate } from '~/shared/constants/zodiacData'
 
@@ -85,41 +86,42 @@ function handleCalculate() {
     <div class="grid grid-cols-12 gap-4 items-center">
       <div class="col-span-12 sm:col-span-4 md:col-span-3">
         <label class="input-label">年份</label>
-        <UiBaseSelect
-          v-model="selectedYear"
+        <NSelect
+          v-model:value="selectedYear"
           :options="years"
           placeholder="選擇年份"
+          :virtual-scroll="false"
         />
       </div>
       <div class="col-span-6 sm:col-span-4 md:col-span-2">
         <label class="input-label">月份</label>
-        <UiBaseSelect
-          v-model="selectedMonth"
+        <NSelect
+          v-model:value="selectedMonth"
           :options="months"
           placeholder="選擇月份"
         />
       </div>
       <div class="col-span-6 sm:col-span-4 md:col-span-2">
         <label class="input-label">日期</label>
-        <UiBaseSelect
-          v-model="selectedDay"
+        <NSelect
+          v-model:value="selectedDay"
           :options="days"
           placeholder="選擇日期"
         />
       </div>
       <div class="col-span-12 sm:col-span-12 md:col-span-5">
         <label class="input-label md:opacity-0">計算</label>
-        <button
-          class="btn btn-primary w-full py-3"
-          :disabled="props.loading"
+        <NButton
+          type="primary"
+          block
+          :loading="props.loading"
           @click="handleCalculate"
         >
-          <Icon
-            :icon="props.loading ? 'mdi:loading' : 'mdi:sparkles'"
-            :class="['w-5 h-5 mr-2', { 'animate-spin': props.loading }]"
-          />
+          <template #icon>
+            <Icon icon="mdi:sparkles" class="w-5 h-5" />
+          </template>
           {{ props.loading ? '計算中...' : '開始計算' }}
-        </button>
+        </NButton>
       </div>
     </div>
   </div>

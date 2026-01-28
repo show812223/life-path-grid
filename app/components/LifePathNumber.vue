@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NCard, NTag, NDivider } from 'naive-ui'
 import { getNumberMeaning } from '~/shared/constants/numberMeanings'
 
 interface Props {
@@ -13,7 +14,7 @@ const meaning = computed(() => getNumberMeaning(props.number))
 </script>
 
 <template>
-  <div class="life-path-number glass-card" :class="{ 'master-number': isMasterNumber }">
+  <NCard class="life-path-number" :bordered="false" :class="{ 'master-number': isMasterNumber }">
     <div class="number-badge" v-if="isMasterNumber">
       <Icon icon="mdi:star" class="w-4 h-4" />
       大師數
@@ -21,15 +22,17 @@ const meaning = computed(() => getNumberMeaning(props.number))
     <div class="number-display">{{ number }}</div>
     <div class="number-title">{{ meaning?.name || '' }}</div>
     <div class="keywords">
-      <span
+      <NTag
         v-for="keyword in meaning?.keywords"
         :key="keyword"
-        class="chip chip-primary m-1"
+        type="primary"
+        size="small"
+        class="m-1"
       >
         {{ keyword }}
-      </span>
+      </NTag>
     </div>
-    <hr class="divider" />
+    <NDivider />
     <div class="calculation-section">
       <div class="section-title-small">計算過程</div>
       <div class="calculation-steps">
@@ -38,14 +41,15 @@ const meaning = computed(() => getNumberMeaning(props.number))
         </div>
       </div>
     </div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped>
 @reference "../assets/styles/tailwind.css";
 
 .life-path-number {
-  @apply relative flex flex-col items-center justify-center p-6 text-center;
+  @apply relative flex flex-col items-center justify-center text-center backdrop-blur-sm;
+  background: rgba(255, 251, 248, 0.85) !important;
 }
 
 .number-badge {
@@ -75,10 +79,6 @@ const meaning = computed(() => getNumberMeaning(props.number))
 
 .keywords {
   @apply mt-3;
-}
-
-.divider {
-  @apply w-full my-4 border-t border-border;
 }
 
 .calculation-section {
