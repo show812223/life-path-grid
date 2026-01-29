@@ -1,75 +1,146 @@
-# Nuxt Minimal Starter
+# 生命靈數九宮格計算器
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+透過生命靈數九宮格探索您的命運密碼
 
-## Setup
+## 專案簡介
 
-Make sure to install dependencies:
+生命靈數九宮格計算器是一個基於 Web 的互動式應用程式，透過分析出生日期來揭示個人的生命數字特質。系統會計算主命數、天賦數、星座數、流年數等多種數字，並將它們映射到九宮格中，分析數字分布與連線關係，提供深入的命理解讀。
+
+## 功能特性
+
+- **主命數計算**：將出生日期所有數字相加化簡，得出代表人生使命的核心數字（含大師數 11、22、33）
+- **天賦數分析**：從主命數計算過程中提取，代表與生俱來的才能
+- **星座數匹配**：根據出生日期自動識別星座，對應 1-9 的數字能量
+- **流年數預測**：計算特定年份的運勢數字，支援年份動態選擇
+- **九宮格分析**：將五種來源的數字（先天數、主命數、天賦數、星座數、流年數）映射到 1-9 九宮格
+- **連線檢測**：分析八條連線（行動線、情感線、智慧線等）的激活狀態
+- **缺數識別**：找出九宮格中缺少的數字，提供補強建議
+- **數字解讀**：詳細解釋各數字的優勢特質與成長課題
+
+## 技術棧
+
+- **框架**：Nuxt 3 + Vue 3
+- **語言**：TypeScript
+- **UI 元件**：Naive UI
+- **樣式**：Tailwind CSS + Sass
+- **圖示**：Iconify (Material Design Icons)
+
+## 專案結構
+
+```
+app/
+├── pages/
+│   └── index.vue              # 主頁面
+├── components/
+│   ├── DateInput.vue          # 日期選擇器
+│   ├── LifePathGrid.vue       # 九宮格主元件（含 SVG 連線動畫）
+│   ├── GridCell.vue           # 單個格子（多色來源標記）
+│   ├── GridLegend.vue         # 數字來源圖例
+│   ├── LifePathNumber.vue     # 主命數展示
+│   ├── TalentNumbers.vue      # 天賦數展示
+│   ├── PersonalYearNumber.vue # 流年數展示與年份選擇
+│   ├── MissingNumbers.vue     # 缺數分析
+│   ├── ConnectionAnalysis.vue # 連線分析詳解
+│   └── NumberMeaning.vue      # 主命數詳細解讀
+├── composables/
+│   ├── useLifePathCalculator.ts  # 核心計算邏輯
+│   └── useNaiveTheme.ts          # 主題配置
+└── shared/
+    ├── types/
+    │   └── index.ts           # TypeScript 類型定義
+    └── constants/
+        ├── numberMeanings.ts  # 數字意義資料庫
+        ├── connectionMeanings.ts  # 連線意義資料庫
+        └── zodiacData.ts      # 星座映射資料
+```
+
+## 核心計算邏輯
+
+### 主命數 (Life Path Number)
+
+將出生日期的所有數字相加，重複化簡直到得到個位數或大師數（11、22、33）。
+
+```
+範例：1990/05/15
+1 + 9 + 9 + 0 + 0 + 5 + 1 + 5 = 30
+3 + 0 = 3
+主命數 = 3
+```
+
+### 天賦數 (Talent Numbers)
+
+從主命數計算過程的倒數第二步提取：
+- 若為兩位數（如 30），天賦數為 3 和 0（忽略 0 後為 3）
+- 若為個位數，天賦數即為該數字本身
+
+### 九宮格數字來源
+
+| 來源 | 說明 | 顏色標記 |
+|------|------|----------|
+| 先天數 | 出生日期中的數字（忽略 0） | 粉紅 |
+| 主命數 | 計算得出的主命數 | 藍色 |
+| 天賦數 | 從計算過程提取 | 綠色 |
+| 星座數 | 星座對應的 1-9 數字 | 紫色 |
+| 流年數 | 指定年份的運勢數字 | 橘色 |
+
+### 八條連線
+
+| 連線名稱 | 數字組合 | 意義 |
+|----------|----------|------|
+| 行動線 | 1-4-7 | 執行力與實踐能力 |
+| 情感線 | 2-5-8 | 感受力與情感表達 |
+| 智慧線 | 3-6-9 | 思考力與創意靈感 |
+| 思想線 | 3-2-1 | 內在思維模式 |
+| 意志線 | 6-5-4 | 決心與毅力 |
+| 執行線 | 9-8-7 | 規劃與完成能力 |
+| 人際線 | 3-5-7 | 社交與溝通能力 |
+| 天賦線 | 1-5-9 | 潛能與天命 |
+
+## 快速開始
+
+### 安裝依賴
 
 ```bash
-# npm
-npm install
-
-# pnpm
+# 推薦使用 pnpm
 pnpm install
 
-# yarn
+# 或其他套件管理器
+npm install
 yarn install
-
-# bun
 bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+### 啟動開發伺服器
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+# 訪問 http://localhost:3000
 ```
 
-## Production
-
-Build the application for production:
+### 建置生產版本
 
 ```bash
-# npm
-npm run build
-
-# pnpm
 pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+pnpm preview  # 本地預覽
 ```
 
-Locally preview production build:
+### 靜態生成
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+pnpm generate
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## 設計系統
+
+應用採用溫暖柔和的色彩主題：
+
+- **主色**：玫瑰粉 (#D4A5A5)
+- **資訊色**：柔和藍 (#A7C4D4)
+- **成功色**：療癒綠 (#8FB996)
+- **警告色**：蜜桃奶油 (#E8C4A2)
+- **背景色**：奶油白 (#FFFBF8)
+- **文字色**：深棕 (#5D4E4E)
+
+## 授權
+
+MIT License
