@@ -141,6 +141,48 @@ pnpm generate
 - **背景色**：奶油白 (#FFFBF8)
 - **文字色**：深棕 (#5D4E4E)
 
+## Google AdSense 廣告配置
+
+專案已整合 Google AdSense 廣告功能，支援透過環境變數配置。
+
+### 設定方式
+
+1. **建立環境變數檔案**
+
+   在專案根目錄建立 `.env` 檔案：
+
+   ```bash
+   NUXT_PUBLIC_ADSENSE_ID=ca-pub-XXXXXXXXXXXXXXXX
+   ```
+
+2. **設定廣告單元**
+
+   在 `app/pages/index.vue` 中找到 `GoogleAd` 元件，填入您的廣告單元 ID：
+
+   ```vue
+   <GoogleAd ad-slot="1234567890" ad-format="auto" />
+   ```
+
+### 廣告元件參數
+
+| 參數 | 類型 | 預設值 | 說明 |
+|------|------|--------|------|
+| `ad-slot` | string | `''` | 廣告單元 ID |
+| `ad-format` | string | `'auto'` | 廣告格式（auto/fluid/rectangle/vertical/horizontal） |
+| `full-width-responsive` | boolean | `true` | 是否啟用全寬響應式 |
+
+### 開發環境
+
+開發環境下會顯示廣告預留區塊，正式部署後才會載入實際廣告。
+
+### 新增廣告位置
+
+在任意頁面或元件中使用：
+
+```vue
+<GoogleAd ad-slot="您的廣告單元ID" />
+```
+
 ## 授權
 
 MIT License

@@ -3,6 +3,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
+  // Runtime config for AdSense
+  runtimeConfig: {
+    public: {
+      adsenseId: process.env.NUXT_PUBLIC_ADSENSE_ID || ''
+    }
+  },
+
   // Nuxt 4 directory structure
   future: {
     compatibilityVersion: 4
@@ -58,6 +65,14 @@ export default defineNuxtConfig({
         {
           rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap'
+        }
+      ],
+      script: [
+        // Google AdSense - 請替換為您的發布商 ID
+        {
+          src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NUXT_PUBLIC_ADSENSE_ID || 'ca-pub-XXXXXXXXXXXXXXXX'}`,
+          async: true,
+          crossorigin: 'anonymous'
         }
       ]
     }

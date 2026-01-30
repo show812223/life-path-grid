@@ -129,6 +129,11 @@ function handleChangeYear(year: number) {
           <div class="mt-6">
             <NumberMeaning :number="result.lifePathNumber" />
           </div>
+
+          <!-- 廣告區域 -->
+          <div class="mt-8">
+            <GoogleAd ad-slot="" ad-format="auto" />
+          </div>
         </div>
       </Transition>
 
