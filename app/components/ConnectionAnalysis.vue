@@ -1,27 +1,38 @@
 <script setup lang="ts">
 import { NCard, NTag, NCollapseTransition } from 'naive-ui'
-import type { Connection } from '~/shared/types'
-import { getConnectionMeaning } from '~/shared/constants/connectionMeanings'
+import type { Connection, SecondaryConnection } from '~/shared/types'
+import { getConnectionMeaning, getSecondaryConnectionMeaning } from '~/shared/constants/connectionMeanings'
 
 interface Props {
   connections: Connection[]
+  secondaryConnections: SecondaryConnection[]
 }
 
 const props = defineProps<Props>()
 
 const activeConnections = computed(() => props.connections.filter((c) => c.isActive))
 const inactiveConnections = computed(() => props.connections.filter((c) => !c.isActive))
+const activeSecondaryConnections = computed(() => props.secondaryConnections.filter((c) => c.isActive))
 
 function getConnectionDetails(conn: Connection) {
   return getConnectionMeaning(conn.id)
 }
 
+function getSecondaryConnectionDetails(conn: SecondaryConnection) {
+  return getSecondaryConnectionMeaning(conn.id)
+}
+
 // 展開狀態
 const expandedConnections = ref<Record<string, boolean>>({})
+const expandedSecondaryConnections = ref<Record<string, boolean>>({})
 const showInactiveConnections = ref(false)
 
 function toggleConnection(id: string) {
   expandedConnections.value[id] = !expandedConnections.value[id]
+}
+
+function toggleSecondaryConnection(id: string) {
+  expandedSecondaryConnections.value[id] = !expandedSecondaryConnections.value[id]
 }
 </script>
 
@@ -99,6 +110,20 @@ function toggleConnection(id: string) {
                   {{ trait }}
                 </NTag>
               </div>
+              <div class="frequency-section">
+                <div class="frequency-item">
+                  <span class="frequency-dot green" />
+                  <span class="frequency-label">高頻表現</span>
+                </div>
+                <p class="frequency-description">{{ getConnectionDetails(conn)?.highFrequency }}</p>
+              </div>
+              <div class="frequency-section">
+                <div class="frequency-item">
+                  <span class="frequency-dot orange" />
+                  <span class="frequency-label">低頻表現</span>
+                </div>
+                <p class="frequency-description">{{ getConnectionDetails(conn)?.lowFrequency }}</p>
+              </div>
             </div>
           </NCollapseTransition>
         </div>
@@ -132,6 +157,56 @@ function toggleConnection(id: string) {
           </div>
         </div>
       </NCollapseTransition>
+    </div>
+
+    <!-- 副連線 -->
+    <div v-if="activeSecondaryConnections.length > 0" class="mt-4">
+      <div class="section-header">
+        <Icon icon="mdi:vector-polyline" class="w-5 h-5 mr-2 text-accent" />
+        <span class="section-title">副連線</span>
+        <NTag type="primary" size="small" class="ml-2">
+          {{ activeSecondaryConnections.length }}
+        </NTag>
+      </div>
+
+      <div class="space-y-2">
+        <div
+          v-for="conn in activeSecondaryConnections"
+          :key="conn.id"
+          class="meaning-panel"
+        >
+          <button
+            class="disclosure-button"
+            @click="toggleSecondaryConnection(conn.id)"
+          >
+            <div class="panel-title">
+              <Icon icon="mdi:check-circle" class="w-4 h-4 mr-2 text-accent" />
+              <span>{{ conn.name }}</span>
+              <span class="numbers-label">（{{ conn.numbers.join('-') }}）</span>
+            </div>
+            <Icon
+              :icon="expandedSecondaryConnections[conn.id] ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+              class="w-5 h-5 text-text-muted"
+            />
+          </button>
+          <NCollapseTransition :show="expandedSecondaryConnections[conn.id]">
+            <div class="meaning-content">
+              <p class="description">{{ getSecondaryConnectionDetails(conn)?.description }}</p>
+              <div class="traits">
+                <NTag
+                  v-for="trait in getSecondaryConnectionDetails(conn)?.traits"
+                  :key="trait"
+                  type="success"
+                  size="small"
+                  class="m-1"
+                >
+                  {{ trait }}
+                </NTag>
+              </div>
+            </div>
+          </NCollapseTransition>
+        </div>
+      </div>
     </div>
   </NCard>
 </template>
@@ -219,7 +294,35 @@ function toggleConnection(id: string) {
 }
 
 .meaning-content .traits {
-  @apply flex flex-wrap;
+  @apply flex flex-wrap mb-3;
+}
+
+.frequency-section {
+  @apply mt-3;
+}
+
+.frequency-item {
+  @apply flex items-center gap-2 mb-1;
+}
+
+.frequency-dot {
+  @apply w-2.5 h-2.5 rounded-full flex-shrink-0;
+}
+
+.frequency-dot.green {
+  @apply bg-success;
+}
+
+.frequency-dot.orange {
+  @apply bg-warning;
+}
+
+.frequency-label {
+  @apply text-sm font-medium text-text-primary;
+}
+
+.frequency-description {
+  @apply text-sm text-text-muted leading-relaxed ml-[18px] mb-0;
 }
 
 .inactive-title {

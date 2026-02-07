@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { NCard, NTag } from 'naive-ui'
+import { NCard, NTag, NCollapseTransition } from 'naive-ui'
 import type { BirthDate, ZodiacSign, PersonalYearNumber } from '~/shared/types'
 import { useLifePathCalculator } from '~/composables/useLifePathCalculator'
+import { getZodiacNumberMeaning } from '~/shared/constants/zodiacNumberMeanings'
 
 const { result, calculate, calcPersonalYear } = useLifePathCalculator()
 
@@ -13,6 +14,14 @@ const birthDate = ref<BirthDate | null>(null)
 const selectedZodiac = ref<ZodiacSign | null>(null)
 const personalYear = ref<PersonalYearNumber | null>(null)
 const currentYear = new Date().getFullYear()
+
+// 星座數解釋展開狀態
+const showZodiacMeaning = ref(false)
+
+const zodiacNumberMeaning = computed(() => {
+  if (!result.value?.zodiacNumber) return null
+  return getZodiacNumberMeaning(result.value.zodiacNumber)
+})
 
 async function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
   isLoading.value = true
@@ -76,7 +85,7 @@ function handleChangeYear(year: number) {
               </NCard>
             </div>
 
-            <!-- 右側：主命數 + 天賦數 + 缺數 -->
+            <!-- 右側：核心數字 -->
             <div class="lg:col-span-7 xl:col-span-8">
               <LifePathNumber
                 :number="result.lifePathNumber"
@@ -86,11 +95,11 @@ function handleChangeYear(year: number) {
               />
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <!-- 星座資訊 -->
+                <!-- 星座資訊（含解釋） -->
                 <NCard v-if="result.zodiacInfo" class="zodiac-info" :bordered="false">
                   <div class="section-header mb-2">
                     <Icon :icon="`mdi:zodiac-${result.zodiacInfo.sign}`" class="w-5 h-5 mr-2 text-info" />
-                    <span class="section-title">星座數</span>
+                    <span class="section-title-sm">星座數</span>
                   </div>
                   <div class="zodiac-display">
                     <span class="zodiac-name">{{ result.zodiacInfo.name }}</span>
@@ -98,6 +107,35 @@ function handleChangeYear(year: number) {
                     <NTag type="info" size="small" class="ml-2">
                       {{ result.zodiacNumber }}
                     </NTag>
+                  </div>
+                  <!-- 星座數解釋 -->
+                  <div v-if="zodiacNumberMeaning" class="mt-3">
+                    <button class="zodiac-detail-btn" @click="showZodiacMeaning = !showZodiacMeaning">
+                      <span class="flex items-center text-sm">
+                        <Icon icon="mdi:information-outline" class="w-4 h-4 mr-2" />
+                        {{ zodiacNumberMeaning.name }}
+                      </span>
+                      <Icon
+                        :icon="showZodiacMeaning ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+                        class="w-5 h-5 text-text-muted"
+                      />
+                    </button>
+                    <NCollapseTransition :show="showZodiacMeaning">
+                      <div class="zodiac-meaning-content">
+                        <p>{{ zodiacNumberMeaning.description }}</p>
+                        <div class="zodiac-traits">
+                          <NTag
+                            v-for="trait in zodiacNumberMeaning.traits"
+                            :key="trait"
+                            type="info"
+                            size="small"
+                            class="m-0.5"
+                          >
+                            {{ trait }}
+                          </NTag>
+                        </div>
+                      </div>
+                    </NCollapseTransition>
                   </div>
                 </NCard>
 
@@ -108,6 +146,13 @@ function handleChangeYear(year: number) {
                   @change-year="handleChangeYear"
                 />
               </div>
+
+              <!-- 生日數 + 制約數 -->
+              <BirthdayConditioningNumber
+                :birthday-number="result.birthdayNumber"
+                :conditioning-number="result.conditioningNumber"
+                class="mb-6"
+              />
 
               <TalentNumbers
                 :talent-numbers="result.talentNumbers"
@@ -120,11 +165,28 @@ function handleChangeYear(year: number) {
             </div>
           </div>
 
-          <!-- 連線分析與數字意義 -->
+          <!-- 圈數解讀 -->
           <div class="mt-6">
-            <ConnectionAnalysis :connections="result.connections" />
+            <CircleCountAnalysis :grid-data="result.gridData" />
           </div>
 
+          <!-- 連線分析 -->
+          <div class="mt-6">
+            <ConnectionAnalysis
+              :connections="result.connections"
+              :secondary-connections="result.secondaryConnections"
+            />
+          </div>
+
+          <!-- 高峰數與挑戰數 -->
+          <div class="mt-6">
+            <PinnacleChallenge
+              :pinnacle-numbers="result.pinnacleNumbers"
+              :challenge-numbers="result.challengeNumbers"
+            />
+          </div>
+
+          <!-- 主命數詳細解讀 -->
           <div class="mt-6">
             <NumberMeaning :number="result.lifePathNumber" />
           </div>
@@ -187,6 +249,10 @@ function handleChangeYear(year: number) {
   @apply font-serif text-lg font-semibold;
 }
 
+.section-title-sm {
+  @apply font-serif text-base font-semibold text-text-primary;
+}
+
 .zodiac-info {
   @apply backdrop-blur-sm;
   background: rgba(255, 251, 248, 0.85) !important;
@@ -202,6 +268,22 @@ function handleChangeYear(year: number) {
 
 .zodiac-info .zodiac-date-range {
   @apply text-sm text-text-muted;
+}
+
+.zodiac-detail-btn {
+  @apply flex w-full items-center justify-between px-3 py-2.5
+         text-left font-medium text-text-primary
+         bg-surface-variant rounded-soft
+         transition-all duration-200 cursor-pointer
+         hover:bg-surface-variant/80;
+}
+
+.zodiac-meaning-content {
+  @apply px-3 py-3 text-sm text-text-primary leading-relaxed;
+}
+
+.zodiac-traits {
+  @apply flex flex-wrap mt-2;
 }
 
 .placeholder-section {
