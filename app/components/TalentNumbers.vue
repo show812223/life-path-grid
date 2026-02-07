@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { NCard } from 'naive-ui'
+import { NCard, NCollapseTransition, NTag } from 'naive-ui'
 import type { TalentNumbers } from '~/shared/types'
+import { getTalentNumberMeaning } from '~/shared/constants/numberMeanings'
 
 interface Props {
   talentNumbers: TalentNumbers
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+const talentDetails = computed(() => {
+  return props.talentNumbers.numbers.map((num) => ({
+    number: num,
+    meaning: getTalentNumberMeaning(num)
+  }))
+})
+
+const expandedPanels = ref<Record<number, boolean>>({})
+
+function togglePanel(num: number) {
+  expandedPanels.value[num] = !expandedPanels.value[num]
+}
 </script>
 
 <template>
@@ -41,6 +55,45 @@ defineProps<Props>()
           天賦數為主命數計算過程中，最後縮減前的數字
         </template>
       </p>
+    </div>
+
+    <!-- 天賦數解釋 -->
+    <div class="talent-meanings mt-4 space-y-2">
+      <div
+        v-for="item in talentDetails"
+        :key="item.number"
+        class="meaning-panel"
+      >
+        <button
+          class="disclosure-button"
+          @click="togglePanel(item.number)"
+        >
+          <div class="panel-title">
+            <span class="panel-number">{{ item.number }}</span>
+            <span class="panel-name">{{ item.meaning?.name }}</span>
+          </div>
+          <Icon
+            :icon="expandedPanels[item.number] ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+            class="w-5 h-5 text-text-muted"
+          />
+        </button>
+        <NCollapseTransition :show="expandedPanels[item.number]">
+          <div class="meaning-content">
+            <p class="description">{{ item.meaning?.description }}</p>
+            <div class="talent-tags">
+              <NTag
+                v-for="talent in item.meaning?.talents"
+                :key="talent"
+                type="info"
+                size="small"
+                class="m-1"
+              >
+                {{ talent }}
+              </NTag>
+            </div>
+          </div>
+        </NCollapseTransition>
+      </div>
     </div>
   </NCard>
 </template>
@@ -87,5 +140,43 @@ defineProps<Props>()
 
 .talent-note {
   @apply text-sm text-text-muted m-0;
+}
+
+.disclosure-button {
+  @apply flex w-full items-center justify-between px-4 py-3
+         text-left font-medium text-text-primary
+         bg-surface-variant rounded-soft
+         transition-all duration-200 cursor-pointer
+         hover:bg-surface-variant/80;
+}
+
+.meaning-panel {
+  @apply overflow-hidden rounded-soft;
+}
+
+.panel-title {
+  @apply flex items-center gap-3;
+}
+
+.panel-number {
+  @apply inline-flex items-center justify-center w-7 h-7
+         font-serif text-sm font-semibold text-lavender
+         bg-lavender/25 rounded-lg;
+}
+
+.panel-name {
+  @apply font-medium text-text-primary;
+}
+
+.meaning-content {
+  @apply px-4 py-3;
+}
+
+.meaning-content .description {
+  @apply text-text-primary leading-relaxed mb-3;
+}
+
+.talent-tags {
+  @apply flex flex-wrap;
 }
 </style>

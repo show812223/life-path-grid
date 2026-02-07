@@ -68,6 +68,45 @@ export interface Connection {
   isActive: boolean
 }
 
+// 副連線類型
+export interface SecondaryConnection {
+  id: string
+  name: string
+  numbers: [number, number]
+  isActive: boolean
+}
+
+// 生日數
+export interface BirthdayNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 制約數
+export interface ConditioningNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 高峰數
+export interface PinnacleNumbers {
+  pinnacles: {
+    number: number
+    ageRange: string
+  }[]
+  calculationSteps: string[]
+}
+
+// 挑戰數
+export interface ChallengeNumbers {
+  challenges: {
+    number: number
+    label: string
+  }[]
+  mainChallenge: number
+  calculationSteps: string[]
+}
+
 // 主命數結果
 export interface LifePathResult {
   lifePathNumber: number
@@ -76,11 +115,16 @@ export interface LifePathResult {
   gridData: GridData
   missingNumbers: number[]
   connections: Connection[]
+  secondaryConnections: SecondaryConnection[]
   talentNumbers: TalentNumbers
   zodiacNumber: number | null
   zodiacInfo: ZodiacInfo | null
   innateDigits: number[]
   personalYearNumber: number | null
+  birthdayNumber: BirthdayNumber
+  conditioningNumber: ConditioningNumber
+  pinnacleNumbers: PinnacleNumbers
+  challengeNumbers: ChallengeNumbers
 }
 
 // 數字意義
@@ -91,6 +135,8 @@ export interface NumberMeaning {
   description: string
   strengths: string[]
   challenges: string[]
+  career: string[]
+  relationship: string
 }
 
 // 連線意義
@@ -100,6 +146,25 @@ export interface ConnectionMeaning {
   numbers: [number, number, number]
   description: string
   traits: string[]
+  highFrequency: string
+  lowFrequency: string
+}
+
+// 副連線意義
+export interface SecondaryConnectionMeaning {
+  id: string
+  name: string
+  numbers: [number, number]
+  description: string
+  traits: string[]
+}
+
+// 天賦數意義
+export interface TalentNumberMeaning {
+  number: number
+  name: string
+  description: string
+  talents: string[]
 }
 
 // 缺數意義
@@ -117,4 +182,56 @@ export interface PersonalYearNumber {
   birthMonthDaySum: number
   yearSum: number
   calculationSteps: string[]
+}
+
+// 流年數意義
+export interface PersonalYearMeaning {
+  number: number
+  name: string
+  theme: string
+  description: string
+  advice: string
+}
+
+// 星座數意義
+export interface ZodiacNumberMeaning {
+  number: number
+  name: string
+  description: string
+  traits: string[]
+}
+
+// 圈數意義
+export interface CircleCountMeaning {
+  count: number
+  label: string
+  description: string
+}
+
+// 生日數意義
+export interface BirthdayNumberMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 制約數意義
+export interface ConditioningNumberMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 高峰數意義
+export interface PinnacleNumberMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 挑戰數意義
+export interface ChallengeNumberMeaning {
+  number: number
+  name: string
+  description: string
 }

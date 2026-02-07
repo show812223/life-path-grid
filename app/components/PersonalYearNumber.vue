@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NSelect, NCard, NCollapseTransition } from 'naive-ui'
 import type { PersonalYearNumber } from '~/shared/types'
+import { getPersonalYearMeaning } from '~/shared/constants/personalYearMeanings'
 
 interface Props {
   personalYear: PersonalYearNumber
@@ -36,6 +37,9 @@ watch(() => props.personalYear.targetYear, (newYear) => {
 
 // 摺疊面板狀態
 const showCalculation = ref(false)
+const showMeaning = ref(true)
+
+const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.number))
 </script>
 
 <template>
@@ -59,9 +63,34 @@ const showCalculation = ref(false)
       <div class="year-number">
         <span class="number-value">{{ personalYear.number }}</span>
       </div>
+      <div v-if="yearMeaning" class="year-name">{{ yearMeaning.name }}</div>
+
+      <!-- 流年數解釋 -->
+      <div v-if="yearMeaning" class="mt-3">
+        <button class="disclosure-button text-sm" @click="showMeaning = !showMeaning">
+          <span class="flex items-center">
+            <Icon icon="mdi:information-outline" class="w-4 h-4 mr-2" />
+            年度解讀
+          </span>
+          <Icon
+            :icon="showMeaning ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+            class="w-5 h-5 text-text-muted"
+          />
+        </button>
+        <NCollapseTransition :show="showMeaning">
+          <div class="meaning-section">
+            <div class="theme-badge">{{ yearMeaning.theme }}</div>
+            <p class="meaning-description">{{ yearMeaning.description }}</p>
+            <div class="advice-box">
+              <Icon icon="mdi:lightbulb-outline" class="w-4 h-4 mr-1 text-warning flex-shrink-0 mt-0.5" />
+              <span><strong>建議：</strong>{{ yearMeaning.advice }}</span>
+            </div>
+          </div>
+        </NCollapseTransition>
+      </div>
 
       <!-- 計算過程 -->
-      <div class="mt-3">
+      <div class="mt-2">
         <button
           class="disclosure-button text-sm"
           @click="showCalculation = !showCalculation"
@@ -126,12 +155,34 @@ const showCalculation = ref(false)
   box-shadow: 0 4px 16px rgba(143, 185, 150, 0.35);
 }
 
+.year-name {
+  @apply font-serif text-base font-semibold text-text-primary mb-1;
+}
+
 .disclosure-button {
   @apply flex w-full items-center justify-between px-4 py-3
          text-left font-medium text-text-primary
          bg-surface-variant rounded-soft
          transition-all duration-200 cursor-pointer
          hover:bg-surface-variant/80;
+}
+
+.meaning-section {
+  @apply px-3 py-3 text-left;
+}
+
+.theme-badge {
+  @apply inline-block px-3 py-1 mb-3 text-xs font-medium text-warning
+         bg-warning/15 rounded-full;
+}
+
+.meaning-description {
+  @apply text-sm text-text-primary leading-relaxed mb-3;
+}
+
+.advice-box {
+  @apply flex items-start p-3 text-sm text-text-primary
+         bg-surface-variant rounded-[10px] leading-relaxed;
 }
 
 .calculation-steps {

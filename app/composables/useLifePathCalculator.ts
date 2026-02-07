@@ -1,5 +1,6 @@
-import type { BirthDate, LifePathResult, GridData, Connection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber } from '~/shared/types'
+import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers } from '~/shared/types'
 import { getZodiacNumber, getZodiacInfo } from '~/shared/constants/zodiacData'
+import { SECONDARY_CONNECTION_DEFINITIONS } from '~/shared/constants/connectionMeanings'
 
 // 大師數
 const MASTER_NUMBERS = [11, 22, 33]
@@ -41,6 +42,30 @@ function reduceToSingleDigit(num: number): { result: number; steps: string[] } {
   }
 
   return { result: current, steps }
+}
+
+/**
+ * 計算數字加總直到個位數（不考慮大師數）
+ */
+function reduceToSingleDigitSimple(num: number): number {
+  let current = num
+  while (current > 9) {
+    const digits = splitToDigits(current)
+    current = digits.reduce((a, b) => a + b, 0)
+  }
+  return current
+}
+
+/**
+ * 計算數字加總直到個位數（保留大師數 11, 22）
+ */
+function reduceWithMaster(num: number): number {
+  let current = num
+  while (current > 9 && current !== 11 && current !== 22) {
+    const digits = splitToDigits(current)
+    current = digits.reduce((a, b) => a + b, 0)
+  }
+  return current
 }
 
 /**
@@ -86,6 +111,104 @@ function calculateTalentNumbers(sum: number): TalentNumbers {
     originalSum: sum,
     isSingleDigit: false
   }
+}
+
+/**
+ * 計算生日數
+ */
+function calculateBirthdayNumber(day: number): BirthdayNumber {
+  const steps: string[] = []
+  if (day > 9) {
+    const digits = splitToDigits(day)
+    const sum = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${sum}`)
+    let result = sum
+    while (result > 9) {
+      const d = splitToDigits(result)
+      result = d.reduce((a, b) => a + b, 0)
+      steps.push(`${d.join(' + ')} = ${result}`)
+    }
+    return { number: result, calculationSteps: steps }
+  }
+  return { number: day, calculationSteps: [`生日數即為 ${day}`] }
+}
+
+/**
+ * 計算制約數
+ */
+function calculateConditioningNumber(month: number, day: number): ConditioningNumber {
+  const steps: string[] = []
+  const sum = month + day
+  steps.push(`${month} + ${day} = ${sum}`)
+
+  let result = sum
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+  return { number: result, calculationSteps: steps }
+}
+
+/**
+ * 計算高峰數
+ */
+function calculatePinnacleNumbers(date: BirthDate, lifePathNumber: number): PinnacleNumbers {
+  const steps: string[] = []
+  const monthReduced = reduceToSingleDigitSimple(date.month)
+  const dayReduced = reduceToSingleDigitSimple(date.day)
+  const yearReduced = reduceToSingleDigitSimple(date.year)
+
+  const lpSimple = lifePathNumber > 9 ? reduceToSingleDigitSimple(lifePathNumber) : lifePathNumber
+  const firstEnd = 36 - lpSimple
+
+  const p1 = reduceWithMaster(monthReduced + dayReduced)
+  const p2 = reduceWithMaster(dayReduced + yearReduced)
+  const p3 = reduceWithMaster(p1 + p2)
+  const p4 = reduceWithMaster(monthReduced + yearReduced)
+
+  steps.push(`月(${monthReduced}) + 日(${dayReduced}) = ${p1}`)
+  steps.push(`日(${dayReduced}) + 年(${yearReduced}) = ${p2}`)
+  steps.push(`第一高峰(${p1}) + 第二高峰(${p2}) = ${p3}`)
+  steps.push(`月(${monthReduced}) + 年(${yearReduced}) = ${p4}`)
+
+  const pinnacles = [
+    { number: p1, ageRange: `0 - ${firstEnd} 歲` },
+    { number: p2, ageRange: `${firstEnd + 1} - ${firstEnd + 9} 歲` },
+    { number: p3, ageRange: `${firstEnd + 10} - ${firstEnd + 18} 歲` },
+    { number: p4, ageRange: `${firstEnd + 19} 歲以後` }
+  ]
+
+  return { pinnacles, calculationSteps: steps }
+}
+
+/**
+ * 計算挑戰數
+ */
+function calculateChallengeNumbers(date: BirthDate): ChallengeNumbers {
+  const steps: string[] = []
+  const monthReduced = reduceToSingleDigitSimple(date.month)
+  const dayReduced = reduceToSingleDigitSimple(date.day)
+  const yearReduced = reduceToSingleDigitSimple(date.year)
+
+  const c1 = Math.abs(monthReduced - dayReduced)
+  const c2 = Math.abs(dayReduced - yearReduced)
+  const c3 = Math.abs(c1 - c2)
+  const c4 = Math.abs(monthReduced - yearReduced)
+
+  steps.push(`|月(${monthReduced}) - 日(${dayReduced})| = ${c1}`)
+  steps.push(`|日(${dayReduced}) - 年(${yearReduced})| = ${c2}`)
+  steps.push(`|第一挑戰(${c1}) - 第二挑戰(${c2})| = ${c3}`)
+  steps.push(`|月(${monthReduced}) - 年(${yearReduced})| = ${c4}`)
+
+  const challenges = [
+    { number: c1, label: '第一挑戰' },
+    { number: c2, label: '第二挑戰' },
+    { number: c3, label: '主要挑戰' },
+    { number: c4, label: '第四挑戰' }
+  ]
+
+  return { challenges, mainChallenge: c3, calculationSteps: steps }
 }
 
 /**
@@ -181,15 +304,21 @@ function analyzeConnections(grid: GridData): Connection[] {
 }
 
 /**
+ * 分析副連線
+ */
+function analyzeSecondaryConnections(grid: GridData): SecondaryConnection[] {
+  return SECONDARY_CONNECTION_DEFINITIONS.map((conn) => ({
+    ...conn,
+    isActive: conn.numbers.every((num) => grid[num].count > 0)
+  }))
+}
+
+/**
  * 計算流年數
- * 1. 出生月日數字加總成一位數
- * 2. 目標年份數字加總成一位數
- * 3. 兩者相加並化為一位數
  */
 function calculatePersonalYearNumber(month: number, day: number, targetYear: number): PersonalYearNumber {
   const steps: string[] = []
 
-  // 步驟 1：出生月日加總
   const monthDayDigits = splitToDigits(month).concat(splitToDigits(day))
   const monthDaySum = monthDayDigits.reduce((a, b) => a + b, 0)
   steps.push(`出生月日：${monthDayDigits.join(' + ')} = ${monthDaySum}`)
@@ -201,7 +330,6 @@ function calculatePersonalYearNumber(month: number, day: number, targetYear: num
     steps.push(`${digits.join(' + ')} = ${birthMonthDaySum}`)
   }
 
-  // 步驟 2：年份數字加總
   const yearDigits = splitToDigits(targetYear)
   const yearDigitSum = yearDigits.reduce((a, b) => a + b, 0)
   steps.push(`年份數字：${yearDigits.join(' + ')} = ${yearDigitSum}`)
@@ -213,7 +341,6 @@ function calculatePersonalYearNumber(month: number, day: number, targetYear: num
     steps.push(`${digits.join(' + ')} = ${yearSum}`)
   }
 
-  // 步驟 3：相加並化為一位數
   const total = birthMonthDaySum + yearSum
   steps.push(`加總：${birthMonthDaySum} + ${yearSum} = ${total}`)
 
@@ -256,6 +383,15 @@ export function useLifePathCalculator() {
     // 5. 分析缺數與連線
     const missingNumbers = findMissingNumbers(gridData)
     const connections = analyzeConnections(gridData)
+    const secondaryConnections = analyzeSecondaryConnections(gridData)
+
+    // 6. 計算生日數與制約數
+    const birthdayNumber = calculateBirthdayNumber(date.day)
+    const conditioningNumber = calculateConditioningNumber(date.month, date.day)
+
+    // 7. 計算高峰數與挑戰數
+    const pinnacleNumbers = calculatePinnacleNumbers(date, lifePathNumber)
+    const challengeNumbers = calculateChallengeNumbers(date)
 
     const lifePathResult: LifePathResult = {
       lifePathNumber,
@@ -264,11 +400,16 @@ export function useLifePathCalculator() {
       gridData,
       missingNumbers,
       connections,
+      secondaryConnections,
       talentNumbers,
       zodiacNumber,
       zodiacInfo,
       innateDigits,
-      personalYearNumber: personalYearNum
+      personalYearNumber: personalYearNum,
+      birthdayNumber,
+      conditioningNumber,
+      pinnacleNumbers,
+      challengeNumbers
     }
 
     result.value = lifePathResult

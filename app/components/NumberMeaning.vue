@@ -57,6 +57,32 @@ const meaning = computed(() => getNumberMeaning(props.number))
             </NTag>
           </div>
         </div>
+
+        <div class="trait-group" v-if="meaning.career">
+          <div class="trait-header">
+            <Icon icon="mdi:briefcase" class="w-4 h-4 mr-2 text-info" />
+            <span>適合職業</span>
+          </div>
+          <div class="trait-list">
+            <NTag
+              v-for="item in meaning.career"
+              :key="item"
+              type="info"
+              size="small"
+              class="m-1"
+            >
+              {{ item }}
+            </NTag>
+          </div>
+        </div>
+
+        <div class="trait-group" v-if="meaning.relationship">
+          <div class="trait-header">
+            <Icon icon="mdi:heart" class="w-4 h-4 mr-2 text-error" />
+            <span>感情特質</span>
+          </div>
+          <p class="relationship-text">{{ meaning.relationship }}</p>
+        </div>
       </div>
     </div>
   </NCard>
@@ -93,5 +119,9 @@ const meaning = computed(() => getNumberMeaning(props.number))
 
 .trait-group .trait-list {
   @apply flex flex-wrap;
+}
+
+.trait-group .relationship-text {
+  @apply text-text-primary leading-relaxed text-sm;
 }
 </style>
