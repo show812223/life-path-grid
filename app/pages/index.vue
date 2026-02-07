@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { NCard, NTag, NCollapseTransition } from 'naive-ui'
-import type { BirthDate, ZodiacSign, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BodyMindSpiritAnalysis, LifeCycleNumbers, SecretCycleNumber } from '~/shared/types'
+import type { BirthDate, ZodiacSign, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BodyMindSpiritAnalysis, LifeCycleNumbers, SecretCycleNumber, FiveElementsAnalysis } from '~/shared/types'
 import { useLifePathCalculator } from '~/composables/useLifePathCalculator'
+import { useHistory } from '~/composables/useHistory'
 import { getZodiacNumberMeaning } from '~/shared/constants/zodiacNumberMeanings'
 
-const { result, calculate, calcPersonalYear, calcPersonalMonth, calcPersonalDay, calcBodyMindSpirit, calcLifeCycles, calcSecretCycle } = useLifePathCalculator()
+const { result, calculate, calcPersonalYear, calcPersonalMonth, calcPersonalDay, calcBodyMindSpirit, calcLifeCycles, calcSecretCycle, calcFiveElements } = useLifePathCalculator()
+const { addRecord } = useHistory()
 
 const hasResult = computed(() => result.value !== null)
 const isLoading = ref(false)
@@ -18,6 +20,7 @@ const personalDay = ref<PersonalDayNumber | null>(null)
 const bodyMindSpirit = ref<BodyMindSpiritAnalysis | null>(null)
 const lifeCycles = ref<LifeCycleNumbers | null>(null)
 const secretCycle = ref<SecretCycleNumber | null>(null)
+const fiveElements = ref<FiveElementsAnalysis | null>(null)
 const currentYear = new Date().getFullYear()
 const now = new Date()
 
@@ -56,6 +59,10 @@ async function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
     bodyMindSpirit.value = calcBodyMindSpirit(result.value.gridData)
     // 計算秘密循環數
     secretCycle.value = calcSecretCycle(result.value.lifePathNumber, pyResult.number)
+    // 計算五行
+    fiveElements.value = calcFiveElements(result.value.gridData)
+    // 記錄歷史
+    addRecord(date, zodiac, result.value.lifePathNumber)
   }
   lifeCycles.value = calcLifeCycles(date)
 
@@ -74,8 +81,13 @@ function handleChangeYear(year: number) {
     if (result.value) {
       bodyMindSpirit.value = calcBodyMindSpirit(result.value.gridData)
       secretCycle.value = calcSecretCycle(result.value.lifePathNumber, pyResult.number)
+      fiveElements.value = calcFiveElements(result.value.gridData)
     }
   }
+}
+
+function handleHistorySelect(date: BirthDate, zodiac: ZodiacSign) {
+  handleCalculate(date, zodiac)
 }
 </script>
 
@@ -91,11 +103,17 @@ function handleChangeYear(year: number) {
       <!-- 日期輸入 -->
       <NCard class="input-section mb-8" :bordered="false">
         <DateInput :loading="isLoading" @calculate="handleCalculate" />
+        <HistoryPanel @select="handleHistorySelect" />
       </NCard>
 
       <!-- 結果區域 -->
       <Transition name="fade-up">
         <div v-if="hasResult && result" class="results-section">
+          <!-- 匯出按鈕 -->
+          <div class="flex justify-end mb-2">
+            <ExportButton target-selector=".results-section" />
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- 左側：九宮格 -->
             <div class="lg:col-span-5 xl:col-span-4">
@@ -197,9 +215,24 @@ function handleChangeYear(year: number) {
             </div>
           </div>
 
+          <!-- 全息三角形 -->
+          <div class="mt-6">
+            <HolographicTriangle
+              :life-path-number="result.lifePathNumber"
+              :birthday-number="result.birthdayNumber.number"
+              :talent-numbers="result.talentNumbers.numbers"
+              :conditioning-number="result.conditioningNumber.number"
+            />
+          </div>
+
           <!-- 身心靈分析 -->
           <div v-if="bodyMindSpirit" class="mt-6">
             <BodyMindSpiritAnalysis :analysis="bodyMindSpirit" />
+          </div>
+
+          <!-- 五行分析 -->
+          <div v-if="fiveElements" class="mt-6">
+            <FiveElementsAnalysis :analysis="fiveElements" />
           </div>
 
           <!-- 圈數解讀 -->
@@ -226,6 +259,11 @@ function handleChangeYear(year: number) {
               :pinnacle-numbers="result.pinnacleNumbers"
               :challenge-numbers="result.challengeNumbers"
             />
+          </div>
+
+          <!-- 英文姓名靈數 + 成熟數 -->
+          <div class="mt-6">
+            <NameNumerology :life-path-number="result.lifePathNumber" />
           </div>
 
           <!-- 配對分析 -->

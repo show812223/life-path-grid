@@ -291,6 +291,48 @@ export interface SecretCycleMeaning {
   description: string
 }
 
+// 英文姓名靈數
+export interface NameNumerology {
+  fullName: string
+  expressionNumber: number
+  soulUrgeNumber: number
+  personalityNumber: number
+  calculationSteps: {
+    expression: string[]
+    soulUrge: string[]
+    personality: string[]
+  }
+}
+
+// 成熟數
+export interface MaturityNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 五行分析
+export interface FiveElementsAnalysis {
+  elements: {
+    water: { count: number; numbers: number[] }
+    earth: { count: number; numbers: number[] }
+    wood: { count: number; numbers: number[] }
+    metal: { count: number; numbers: number[] }
+    fire: { count: number; numbers: number[] }
+  }
+  dominant: string
+  weak: string[]
+}
+
+// 歷史紀錄
+export interface HistoryRecord {
+  id: string
+  birthDate: BirthDate
+  zodiacSign: ZodiacSign
+  lifePathNumber: number
+  timestamp: number
+  label?: string
+}
+
 // 配對分析結果
 export interface CompatibilityResult {
   personA: { lifePathNumber: number; gridData: GridData; connections: Connection[]; missingNumbers: number[] }

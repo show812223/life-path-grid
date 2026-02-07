@@ -377,6 +377,62 @@ a,
   cursor: pointer;
 }
 
+/* 深色模式 */
+[data-theme="dark"] {
+  --color-primary: #C99A9A;
+  --color-primary-light: #B38080;
+  --color-primary-dark: #E8C5C5;
+  --color-secondary: #C4966A;
+  --color-accent: #7BA899;
+  --color-accent-light: #8FBFAE;
+  --color-lavender: #A896CE;
+  --color-background: #1A1614;
+  --color-surface: #252120;
+  --color-surface-variant: #302B29;
+  --color-text-primary: #E8DDD5;
+  --color-text-muted: #9E8E8E;
+  --color-border: #3D3634;
+  --color-success: #7BA87F;
+  --color-info: #7FA8B8;
+  --color-warning: #C4966A;
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(
+    160deg,
+    #1A1614 0%,
+    #201C1A 25%,
+    #1A1614 50%,
+    #1E1A18 75%,
+    #1A1614 100%
+  ) !important;
+  background-attachment: fixed;
+}
+
+[data-theme="dark"] body::before {
+  background: radial-gradient(circle, rgba(201, 154, 154, 0.08) 0%, transparent 70%);
+}
+
+[data-theme="dark"] body::after {
+  background: radial-gradient(circle, rgba(123, 168, 153, 0.06) 0%, transparent 70%);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background-color: #252120;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background-color: #4A3F3D;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background-color: #5D4E4E;
+}
+
+[data-theme="dark"] ::selection {
+  background: rgba(201, 154, 154, 0.3);
+}
+
 /* 尊重使用者的動畫偏好設定 */
 @media (prefers-reduced-motion: reduce) {
   *,
