@@ -114,6 +114,9 @@ function toggleSecondaryConnection(id: string) {
                 <div class="frequency-item">
                   <span class="frequency-dot green" />
                   <span class="frequency-label">高頻表現</span>
+                  <NTag v-if="getConnectionDetails(conn)?.highFreqName" type="success" size="small" class="ml-2">
+                    {{ getConnectionDetails(conn)?.highFreqName }}
+                  </NTag>
                 </div>
                 <p class="frequency-description">{{ getConnectionDetails(conn)?.highFrequency }}</p>
               </div>
@@ -121,6 +124,9 @@ function toggleSecondaryConnection(id: string) {
                 <div class="frequency-item">
                   <span class="frequency-dot orange" />
                   <span class="frequency-label">低頻表現</span>
+                  <NTag v-if="getConnectionDetails(conn)?.lowFreqName" type="warning" size="small" class="ml-2">
+                    {{ getConnectionDetails(conn)?.lowFreqName }}
+                  </NTag>
                 </div>
                 <p class="frequency-description">{{ getConnectionDetails(conn)?.lowFrequency }}</p>
               </div>

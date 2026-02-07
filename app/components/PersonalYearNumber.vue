@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { NSelect, NCard, NCollapseTransition } from 'naive-ui'
-import type { PersonalYearNumber } from '~/shared/types'
+import { NSelect, NCard, NTag, NCollapseTransition } from 'naive-ui'
+import type { PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, SecretCycleNumber } from '~/shared/types'
 import { getPersonalYearMeaning } from '~/shared/constants/personalYearMeanings'
+import { getSecretCycleMeaning } from '~/shared/constants/secretCycleMeanings'
 
 interface Props {
   personalYear: PersonalYearNumber
+  personalMonth: PersonalMonthNumber | null
+  personalDay: PersonalDayNumber | null
+  secretCycle: SecretCycleNumber | null
 }
 
 const props = defineProps<Props>()
@@ -38,8 +42,13 @@ watch(() => props.personalYear.targetYear, (newYear) => {
 // 摺疊面板狀態
 const showCalculation = ref(false)
 const showMeaning = ref(true)
+const showMonthDayCalc = ref(false)
 
 const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.number))
+const monthMeaning = computed(() => props.personalMonth ? getPersonalYearMeaning(props.personalMonth.number) : null)
+const dayMeaning = computed(() => props.personalDay ? getPersonalYearMeaning(props.personalDay.number) : null)
+const secretCycleMeaning = computed(() => props.secretCycle ? getSecretCycleMeaning(props.secretCycle.number) : null)
+const showSecretCycle = ref(false)
 </script>
 
 <template>
@@ -65,6 +74,57 @@ const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.num
       </div>
       <div v-if="yearMeaning" class="year-name">{{ yearMeaning.name }}</div>
 
+      <!-- 流月 + 流日 小卡 -->
+      <div v-if="personalMonth || personalDay" class="month-day-row">
+        <div v-if="personalMonth" class="mini-card">
+          <span class="mini-label">流月</span>
+          <span class="mini-number">{{ personalMonth.number }}</span>
+          <span v-if="monthMeaning" class="mini-name">{{ monthMeaning.name }}</span>
+        </div>
+        <div v-if="personalDay" class="mini-card">
+          <span class="mini-label">流日</span>
+          <span class="mini-number">{{ personalDay.number }}</span>
+          <span v-if="dayMeaning" class="mini-name">{{ dayMeaning.name }}</span>
+        </div>
+      </div>
+
+      <!-- 秘密循環數 -->
+      <div v-if="secretCycle" class="month-day-row mt-2">
+        <div class="mini-card secret-cycle-card">
+          <span class="mini-label">秘密循環數</span>
+          <span class="mini-number secret-cycle-number">{{ secretCycle.number }}</span>
+          <span v-if="secretCycleMeaning" class="mini-name">{{ secretCycleMeaning.name }}</span>
+        </div>
+      </div>
+
+      <!-- 秘密循環數解釋 -->
+      <div v-if="secretCycleMeaning" class="mt-2">
+        <button class="disclosure-button text-sm" @click="showSecretCycle = !showSecretCycle">
+          <span class="flex items-center">
+            <Icon icon="mdi:eye-circle-outline" class="w-4 h-4 mr-2" />
+            秘密循環數解讀
+          </span>
+          <Icon
+            :icon="showSecretCycle ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+            class="w-5 h-5 text-text-muted"
+          />
+        </button>
+        <NCollapseTransition :show="showSecretCycle">
+          <div class="meaning-section">
+            <p class="meaning-description">{{ secretCycleMeaning.description }}</p>
+            <div class="calculation-steps mt-2">
+              <div
+                v-for="(step, i) in secretCycle.calculationSteps"
+                :key="'sc' + i"
+                class="step-item"
+              >
+                {{ step }}
+              </div>
+            </div>
+          </div>
+        </NCollapseTransition>
+      </div>
+
       <!-- 流年數解釋 -->
       <div v-if="yearMeaning" class="mt-3">
         <button class="disclosure-button text-sm" @click="showMeaning = !showMeaning">
@@ -89,7 +149,48 @@ const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.num
         </NCollapseTransition>
       </div>
 
-      <!-- 計算過程 -->
+      <!-- 流月流日計算過程 -->
+      <div v-if="personalMonth || personalDay" class="mt-2">
+        <button
+          class="disclosure-button text-sm"
+          @click="showMonthDayCalc = !showMonthDayCalc"
+        >
+          <span class="flex items-center">
+            <Icon icon="mdi:calendar-month" class="w-4 h-4 mr-2" />
+            流月 / 流日計算
+          </span>
+          <Icon
+            :icon="showMonthDayCalc ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+            class="w-5 h-5 text-text-muted"
+          />
+        </button>
+        <NCollapseTransition :show="showMonthDayCalc">
+          <div class="calculation-steps mt-2">
+            <div v-if="personalMonth" class="mb-2">
+              <div class="step-label">流月數（{{ personalMonth.targetMonth }} 月）</div>
+              <div
+                v-for="(step, i) in personalMonth.calculationSteps"
+                :key="'m' + i"
+                class="step-item"
+              >
+                {{ step }}
+              </div>
+            </div>
+            <div v-if="personalDay">
+              <div class="step-label">流日數（{{ personalDay.targetDay }} 日）</div>
+              <div
+                v-for="(step, i) in personalDay.calculationSteps"
+                :key="'d' + i"
+                class="step-item"
+              >
+                {{ step }}
+              </div>
+            </div>
+          </div>
+        </NCollapseTransition>
+      </div>
+
+      <!-- 流年計算過程 -->
       <div class="mt-2">
         <button
           class="disclosure-button text-sm"
@@ -97,7 +198,7 @@ const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.num
         >
           <span class="flex items-center">
             <Icon icon="mdi:calculator" class="w-4 h-4 mr-2" />
-            計算過程
+            流年計算過程
           </span>
           <Icon
             :icon="showCalculation ? 'mdi:chevron-up' : 'mdi:chevron-down'"
@@ -159,6 +260,35 @@ const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.num
   @apply font-serif text-base font-semibold text-text-primary mb-1;
 }
 
+.month-day-row {
+  @apply flex justify-center gap-4 mt-3;
+}
+
+.mini-card {
+  @apply flex flex-col items-center px-4 py-2.5 rounded-soft;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.mini-label {
+  @apply text-xs text-text-muted mb-1;
+}
+
+.mini-number {
+  @apply font-serif text-xl font-bold text-accent;
+}
+
+.mini-name {
+  @apply text-xs text-text-muted mt-0.5;
+}
+
+.secret-cycle-card {
+  background: rgba(197, 164, 103, 0.08);
+}
+
+.secret-cycle-number {
+  color: #C5A467;
+}
+
 .disclosure-button {
   @apply flex w-full items-center justify-between px-4 py-3
          text-left font-medium text-text-primary
@@ -187,6 +317,10 @@ const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.num
 
 .calculation-steps {
   @apply font-sans text-xs text-text-muted;
+}
+
+.step-label {
+  @apply text-xs font-semibold text-text-primary mb-1;
 }
 
 .step-item {

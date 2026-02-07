@@ -13,6 +13,7 @@
   "dependencies": {
     "@css-render/vue3-ssr": "^0.15.14",
     "@iconify/vue": "^5.0.0",
+    "html2canvas": "^1.4.1",
     "naive-ui": "^2.43.2",
     "nuxt": "^3.16.1",
     "vue": "^3.5.13"

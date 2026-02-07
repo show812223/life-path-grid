@@ -1,6 +1,7 @@
-import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers } from '~/shared/types'
+import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers, BodyMindSpiritAnalysis, LifeCycleNumbers, SecretCycleNumber, NameNumerology, MaturityNumber, FiveElementsAnalysis } from '~/shared/types'
 import { getZodiacNumber, getZodiacInfo } from '~/shared/constants/zodiacData'
 import { SECONDARY_CONNECTION_DEFINITIONS } from '~/shared/constants/connectionMeanings'
+import { getLetterValue, isVowel } from '~/shared/constants/nameNumerologyMeanings'
 
 // 大師數
 const MASTER_NUMBERS = [11, 22, 33]
@@ -361,6 +362,235 @@ function calculatePersonalYearNumber(month: number, day: number, targetYear: num
 }
 
 /**
+ * 計算流月數
+ */
+function calculatePersonalMonthNumber(personalYearNumber: number, targetMonth: number): PersonalMonthNumber {
+  const steps: string[] = []
+  const monthDigits = splitToDigits(targetMonth)
+  const monthSum = monthDigits.reduce((a, b) => a + b, 0)
+
+  const total = personalYearNumber + monthSum
+  steps.push(`流年數(${personalYearNumber}) + 月份(${targetMonth}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, targetMonth, calculationSteps: steps }
+}
+
+/**
+ * 計算流日數
+ */
+function calculatePersonalDayNumber(personalMonthNumber: number, targetDay: number): PersonalDayNumber {
+  const steps: string[] = []
+  const dayDigits = splitToDigits(targetDay)
+  const daySum = dayDigits.reduce((a, b) => a + b, 0)
+
+  const total = personalMonthNumber + daySum
+  steps.push(`流月數(${personalMonthNumber}) + 日期(${targetDay}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, targetDay, calculationSteps: steps }
+}
+
+/**
+ * 身心靈分析
+ */
+function analyzeBodyMindSpirit(gridData: GridData): BodyMindSpiritAnalysis {
+  const bodyNums = [1, 4, 7]
+  const mindNums = [2, 5, 8]
+  const spiritNums = [3, 6, 9]
+
+  const bodyCount = bodyNums.reduce((sum, n) => sum + gridData[n].count, 0)
+  const mindCount = mindNums.reduce((sum, n) => sum + gridData[n].count, 0)
+  const spiritCount = spiritNums.reduce((sum, n) => sum + gridData[n].count, 0)
+
+  let dominant: BodyMindSpiritAnalysis['dominant'] = 'balanced'
+  const max = Math.max(bodyCount, mindCount, spiritCount)
+  const counts = [bodyCount, mindCount, spiritCount]
+  const maxCount = counts.filter((c) => c === max).length
+
+  if (maxCount === 1) {
+    if (max === bodyCount) dominant = 'body'
+    else if (max === mindCount) dominant = 'mind'
+    else dominant = 'spirit'
+  }
+
+  return {
+    body: { count: bodyCount, numbers: bodyNums },
+    mind: { count: mindCount, numbers: mindNums },
+    spirit: { count: spiritCount, numbers: spiritNums },
+    dominant
+  }
+}
+
+/**
+ * 計算生命週期數
+ */
+function calculateLifeCycleNumbers(date: BirthDate): LifeCycleNumbers {
+  const steps: string[] = []
+
+  const earlyNum = reduceWithMaster(date.month)
+  steps.push(`早期週期：月份 ${date.month} → ${earlyNum}`)
+
+  const middleNum = reduceWithMaster(date.day)
+  steps.push(`中期週期：日期 ${date.day} → ${middleNum}`)
+
+  const yearDigits = splitToDigits(date.year)
+  const yearSum = yearDigits.reduce((a, b) => a + b, 0)
+  const lateNum = reduceWithMaster(yearSum)
+  steps.push(`晚期週期：年份 ${date.year}（${yearDigits.join('+')}=${yearSum}）→ ${lateNum}`)
+
+  return {
+    earlyCycle: { number: earlyNum, ageRange: '出生 - 約 30 歲' },
+    middleCycle: { number: middleNum, ageRange: '約 31 - 60 歲' },
+    lateCycle: { number: lateNum, ageRange: '約 61 歲以後' },
+    calculationSteps: steps
+  }
+}
+
+/**
+ * 計算秘密循環數
+ */
+function calculateSecretCycleNumber(lifePathNumber: number, personalYearNumber: number): SecretCycleNumber {
+  const steps: string[] = []
+  const lpSimple = lifePathNumber > 9 ? reduceToSingleDigitSimple(lifePathNumber) : lifePathNumber
+  const total = lpSimple + personalYearNumber
+  steps.push(`主命數(${lpSimple}) + 流年數(${personalYearNumber}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, calculationSteps: steps }
+}
+
+/**
+ * 計算英文姓名靈數
+ */
+function calculateNameNumerology(fullName: string): NameNumerology {
+  const letters = fullName.toUpperCase().replace(/[^A-Z]/g, '').split('')
+  const expressionSteps: string[] = []
+  const soulUrgeSteps: string[] = []
+  const personalitySteps: string[] = []
+
+  // 表達數（所有字母）
+  const allValues = letters.map(l => getLetterValue(l))
+  const allSum = allValues.reduce((a: number, b: number) => a + b, 0)
+  expressionSteps.push(`${letters.join(' ')} → ${allValues.join(' + ')} = ${allSum}`)
+  let expressionNum = allSum
+  while (expressionNum > 9) {
+    const digits = splitToDigits(expressionNum)
+    expressionNum = digits.reduce((a, b) => a + b, 0)
+    expressionSteps.push(`${digits.join(' + ')} = ${expressionNum}`)
+  }
+
+  // 靈魂渴望數（母音）
+  const vowels = letters.filter(l => isVowel(l))
+  const vowelValues = vowels.map(l => getLetterValue(l))
+  const vowelSum = vowelValues.reduce((a: number, b: number) => a + b, 0)
+  if (vowels.length > 0) {
+    soulUrgeSteps.push(`母音：${vowels.join(' ')} → ${vowelValues.join(' + ')} = ${vowelSum}`)
+  }
+  let soulUrgeNum = vowelSum
+  while (soulUrgeNum > 9) {
+    const digits = splitToDigits(soulUrgeNum)
+    soulUrgeNum = digits.reduce((a, b) => a + b, 0)
+    soulUrgeSteps.push(`${digits.join(' + ')} = ${soulUrgeNum}`)
+  }
+
+  // 人格數（子音）
+  const consonants = letters.filter(l => !isVowel(l))
+  const consonantValues = consonants.map(l => getLetterValue(l))
+  const consonantSum = consonantValues.reduce((a: number, b: number) => a + b, 0)
+  if (consonants.length > 0) {
+    personalitySteps.push(`子音：${consonants.join(' ')} → ${consonantValues.join(' + ')} = ${consonantSum}`)
+  }
+  let personalityNum = consonantSum
+  while (personalityNum > 9) {
+    const digits = splitToDigits(personalityNum)
+    personalityNum = digits.reduce((a, b) => a + b, 0)
+    personalitySteps.push(`${digits.join(' + ')} = ${personalityNum}`)
+  }
+
+  return {
+    fullName,
+    expressionNumber: expressionNum || 0,
+    soulUrgeNumber: soulUrgeNum || 0,
+    personalityNumber: personalityNum || 0,
+    calculationSteps: {
+      expression: expressionSteps,
+      soulUrge: soulUrgeSteps,
+      personality: personalitySteps
+    }
+  }
+}
+
+/**
+ * 計算成熟數
+ */
+function calculateMaturityNumber(lifePathNumber: number, expressionNumber: number): MaturityNumber {
+  const steps: string[] = []
+  const lpSimple = lifePathNumber > 9 ? reduceToSingleDigitSimple(lifePathNumber) : lifePathNumber
+  const total = lpSimple + expressionNumber
+  steps.push(`主命數(${lpSimple}) + 表達數(${expressionNumber}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, calculationSteps: steps }
+}
+
+/**
+ * 五行分析
+ */
+function analyzeFiveElements(gridData: GridData): FiveElementsAnalysis {
+  const elements = {
+    water: { count: 0, numbers: [1] as number[] },
+    wood: { count: 0, numbers: [3, 4] as number[] },
+    fire: { count: 0, numbers: [9] as number[] },
+    earth: { count: 0, numbers: [2, 5, 8] as number[] },
+    metal: { count: 0, numbers: [6, 7] as number[] }
+  }
+
+  // 水: 1
+  elements.water.count = gridData[1].count
+  // 木: 3, 4
+  elements.wood.count = gridData[3].count + gridData[4].count
+  // 火: 9
+  elements.fire.count = gridData[9].count
+  // 土: 2, 5, 8
+  elements.earth.count = gridData[2].count + gridData[5].count + gridData[8].count
+  // 金: 6, 7
+  elements.metal.count = gridData[6].count + gridData[7].count
+
+  const nameMap: Record<string, string> = { water: '水', wood: '木', fire: '火', earth: '土', metal: '金' }
+  const entries = Object.entries(elements) as [string, { count: number }][]
+  const maxCount = Math.max(...entries.map(([, v]) => v.count))
+  const dominant = entries.find(([, v]) => v.count === maxCount)?.[0] ?? 'earth'
+  const weak = entries.filter(([, v]) => v.count === 0).map(([k]) => nameMap[k])
+
+  return { elements, dominant: nameMap[dominant], weak }
+}
+
+/**
  * 生命靈數計算 Composable
  */
 export function useLifePathCalculator() {
@@ -424,10 +654,50 @@ export function useLifePathCalculator() {
     return calculatePersonalYearNumber(month, day, targetYear)
   }
 
+  function calcPersonalMonth(personalYearNumber: number, targetMonth: number): PersonalMonthNumber {
+    return calculatePersonalMonthNumber(personalYearNumber, targetMonth)
+  }
+
+  function calcPersonalDay(personalMonthNumber: number, targetDay: number): PersonalDayNumber {
+    return calculatePersonalDayNumber(personalMonthNumber, targetDay)
+  }
+
+  function calcBodyMindSpirit(gridData: GridData): BodyMindSpiritAnalysis {
+    return analyzeBodyMindSpirit(gridData)
+  }
+
+  function calcLifeCycles(date: BirthDate): LifeCycleNumbers {
+    return calculateLifeCycleNumbers(date)
+  }
+
+  function calcSecretCycle(lifePathNumber: number, personalYearNumber: number): SecretCycleNumber {
+    return calculateSecretCycleNumber(lifePathNumber, personalYearNumber)
+  }
+
+  function calcNameNumerology(fullName: string): NameNumerology {
+    return calculateNameNumerology(fullName)
+  }
+
+  function calcMaturityNumber(lifePathNumber: number, expressionNumber: number): MaturityNumber {
+    return calculateMaturityNumber(lifePathNumber, expressionNumber)
+  }
+
+  function calcFiveElements(gridData: GridData): FiveElementsAnalysis {
+    return analyzeFiveElements(gridData)
+  }
+
   return {
     result: readonly(result),
     calculate,
     calcPersonalYear,
+    calcPersonalMonth,
+    calcPersonalDay,
+    calcBodyMindSpirit,
+    calcLifeCycles,
+    calcSecretCycle,
+    calcNameNumerology,
+    calcMaturityNumber,
+    calcFiveElements,
     reset
   }
 }

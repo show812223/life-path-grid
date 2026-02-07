@@ -143,6 +143,8 @@ export interface NumberMeaning {
 export interface ConnectionMeaning {
   id: string
   name: string
+  highFreqName: string
+  lowFreqName: string
   numbers: [number, number, number]
   description: string
   traits: string[]
@@ -173,6 +175,9 @@ export interface MissingNumberMeaning {
   name: string
   description: string
   suggestion: string
+  luckyColor: string
+  crystal: string
+  essentialOil: string
 }
 
 // 流年數
@@ -234,4 +239,108 @@ export interface ChallengeNumberMeaning {
   number: number
   name: string
   description: string
+}
+
+// 流月數
+export interface PersonalMonthNumber {
+  number: number
+  targetMonth: number
+  calculationSteps: string[]
+}
+
+// 流日數
+export interface PersonalDayNumber {
+  number: number
+  targetDay: number
+  calculationSteps: string[]
+}
+
+// 身心靈分析
+export interface BodyMindSpiritAnalysis {
+  body: { count: number; numbers: number[] }
+  mind: { count: number; numbers: number[] }
+  spirit: { count: number; numbers: number[] }
+  dominant: 'body' | 'mind' | 'spirit' | 'balanced'
+}
+
+// 生命週期數
+export interface LifeCycleNumbers {
+  earlyCycle: { number: number; ageRange: string }
+  middleCycle: { number: number; ageRange: string }
+  lateCycle: { number: number; ageRange: string }
+  calculationSteps: string[]
+}
+
+// 生命週期數意義
+export interface LifeCycleMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 秘密循環數
+export interface SecretCycleNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 秘密循環數意義
+export interface SecretCycleMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 英文姓名靈數
+export interface NameNumerology {
+  fullName: string
+  expressionNumber: number
+  soulUrgeNumber: number
+  personalityNumber: number
+  calculationSteps: {
+    expression: string[]
+    soulUrge: string[]
+    personality: string[]
+  }
+}
+
+// 成熟數
+export interface MaturityNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 五行分析
+export interface FiveElementsAnalysis {
+  elements: {
+    water: { count: number; numbers: number[] }
+    earth: { count: number; numbers: number[] }
+    wood: { count: number; numbers: number[] }
+    metal: { count: number; numbers: number[] }
+    fire: { count: number; numbers: number[] }
+  }
+  dominant: string
+  weak: string[]
+}
+
+// 歷史紀錄
+export interface HistoryRecord {
+  id: string
+  birthDate: BirthDate
+  zodiacSign: ZodiacSign
+  lifePathNumber: number
+  timestamp: number
+  label?: string
+}
+
+// 配對分析結果
+export interface CompatibilityResult {
+  personA: { lifePathNumber: number; gridData: GridData; connections: Connection[]; missingNumbers: number[] }
+  personB: { lifePathNumber: number; gridData: GridData; connections: Connection[]; missingNumbers: number[] }
+  lifePathCompatibility: { score: number; description: string }
+  sharedNumbers: number[]
+  complementaryNumbers: { aFillsB: number[]; bFillsA: number[] }
+  sharedConnections: string[]
+  uniqueConnectionsA: string[]
+  uniqueConnectionsB: string[]
 }
