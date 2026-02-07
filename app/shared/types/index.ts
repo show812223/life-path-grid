@@ -143,6 +143,8 @@ export interface NumberMeaning {
 export interface ConnectionMeaning {
   id: string
   name: string
+  highFreqName: string
+  lowFreqName: string
   numbers: [number, number, number]
   description: string
   traits: string[]
@@ -274,4 +276,29 @@ export interface LifeCycleMeaning {
   number: number
   name: string
   description: string
+}
+
+// 秘密循環數
+export interface SecretCycleNumber {
+  number: number
+  calculationSteps: string[]
+}
+
+// 秘密循環數意義
+export interface SecretCycleMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 配對分析結果
+export interface CompatibilityResult {
+  personA: { lifePathNumber: number; gridData: GridData; connections: Connection[]; missingNumbers: number[] }
+  personB: { lifePathNumber: number; gridData: GridData; connections: Connection[]; missingNumbers: number[] }
+  lifePathCompatibility: { score: number; description: string }
+  sharedNumbers: number[]
+  complementaryNumbers: { aFillsB: number[]; bFillsA: number[] }
+  sharedConnections: string[]
+  uniqueConnectionsA: string[]
+  uniqueConnectionsB: string[]
 }

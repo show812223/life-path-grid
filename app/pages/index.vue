@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { NCard, NTag, NCollapseTransition } from 'naive-ui'
-import type { BirthDate, ZodiacSign, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BodyMindSpiritAnalysis, LifeCycleNumbers } from '~/shared/types'
+import type { BirthDate, ZodiacSign, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BodyMindSpiritAnalysis, LifeCycleNumbers, SecretCycleNumber } from '~/shared/types'
 import { useLifePathCalculator } from '~/composables/useLifePathCalculator'
 import { getZodiacNumberMeaning } from '~/shared/constants/zodiacNumberMeanings'
 
-const { result, calculate, calcPersonalYear, calcPersonalMonth, calcPersonalDay, calcBodyMindSpirit, calcLifeCycles } = useLifePathCalculator()
+const { result, calculate, calcPersonalYear, calcPersonalMonth, calcPersonalDay, calcBodyMindSpirit, calcLifeCycles, calcSecretCycle } = useLifePathCalculator()
 
 const hasResult = computed(() => result.value !== null)
 const isLoading = ref(false)
@@ -17,6 +17,7 @@ const personalMonth = ref<PersonalMonthNumber | null>(null)
 const personalDay = ref<PersonalDayNumber | null>(null)
 const bodyMindSpirit = ref<BodyMindSpiritAnalysis | null>(null)
 const lifeCycles = ref<LifeCycleNumbers | null>(null)
+const secretCycle = ref<SecretCycleNumber | null>(null)
 const currentYear = new Date().getFullYear()
 const now = new Date()
 
@@ -53,6 +54,8 @@ async function handleCalculate(date: BirthDate, zodiac: ZodiacSign) {
   // 計算身心靈與生命週期
   if (result.value) {
     bodyMindSpirit.value = calcBodyMindSpirit(result.value.gridData)
+    // 計算秘密循環數
+    secretCycle.value = calcSecretCycle(result.value.lifePathNumber, pyResult.number)
   }
   lifeCycles.value = calcLifeCycles(date)
 
@@ -67,9 +70,10 @@ function handleChangeYear(year: number) {
     updatePersonalMonthDay(pyResult.number)
     // 重新計算九宮格以包含新的流年數
     calculate(birthDate.value, selectedZodiac.value, pyResult.number)
-    // 更新身心靈分析
+    // 更新身心靈分析與秘密循環數
     if (result.value) {
       bodyMindSpirit.value = calcBodyMindSpirit(result.value.gridData)
+      secretCycle.value = calcSecretCycle(result.value.lifePathNumber, pyResult.number)
     }
   }
 }
@@ -170,6 +174,7 @@ function handleChangeYear(year: number) {
                   :personal-year="personalYear"
                   :personal-month="personalMonth"
                   :personal-day="personalDay"
+                  :secret-cycle="secretCycle"
                   @change-year="handleChangeYear"
                 />
               </div>
@@ -220,6 +225,16 @@ function handleChangeYear(year: number) {
             <PinnacleChallenge
               :pinnacle-numbers="result.pinnacleNumbers"
               :challenge-numbers="result.challengeNumbers"
+            />
+          </div>
+
+          <!-- 配對分析 -->
+          <div class="mt-6">
+            <CompatibilityAnalysis
+              :person-a-life-path="result.lifePathNumber"
+              :person-a-grid="result.gridData"
+              :person-a-connections="result.connections"
+              :person-a-missing="result.missingNumbers"
             />
           </div>
 

@@ -1,4 +1,4 @@
-import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers, BodyMindSpiritAnalysis, LifeCycleNumbers } from '~/shared/types'
+import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers, BodyMindSpiritAnalysis, LifeCycleNumbers, SecretCycleNumber } from '~/shared/types'
 import { getZodiacNumber, getZodiacInfo } from '~/shared/constants/zodiacData'
 import { SECONDARY_CONNECTION_DEFINITIONS } from '~/shared/constants/connectionMeanings'
 
@@ -459,6 +459,25 @@ function calculateLifeCycleNumbers(date: BirthDate): LifeCycleNumbers {
 }
 
 /**
+ * 計算秘密循環數
+ */
+function calculateSecretCycleNumber(lifePathNumber: number, personalYearNumber: number): SecretCycleNumber {
+  const steps: string[] = []
+  const lpSimple = lifePathNumber > 9 ? reduceToSingleDigitSimple(lifePathNumber) : lifePathNumber
+  const total = lpSimple + personalYearNumber
+  steps.push(`主命數(${lpSimple}) + 流年數(${personalYearNumber}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, calculationSteps: steps }
+}
+
+/**
  * 生命靈數計算 Composable
  */
 export function useLifePathCalculator() {
@@ -538,6 +557,10 @@ export function useLifePathCalculator() {
     return calculateLifeCycleNumbers(date)
   }
 
+  function calcSecretCycle(lifePathNumber: number, personalYearNumber: number): SecretCycleNumber {
+    return calculateSecretCycleNumber(lifePathNumber, personalYearNumber)
+  }
+
   return {
     result: readonly(result),
     calculate,
@@ -546,6 +569,7 @@ export function useLifePathCalculator() {
     calcPersonalDay,
     calcBodyMindSpirit,
     calcLifeCycles,
+    calcSecretCycle,
     reset
   }
 }

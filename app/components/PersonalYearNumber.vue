@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { NSelect, NCard, NTag, NCollapseTransition } from 'naive-ui'
-import type { PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber } from '~/shared/types'
+import type { PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, SecretCycleNumber } from '~/shared/types'
 import { getPersonalYearMeaning } from '~/shared/constants/personalYearMeanings'
+import { getSecretCycleMeaning } from '~/shared/constants/secretCycleMeanings'
 
 interface Props {
   personalYear: PersonalYearNumber
   personalMonth: PersonalMonthNumber | null
   personalDay: PersonalDayNumber | null
+  secretCycle: SecretCycleNumber | null
 }
 
 const props = defineProps<Props>()
@@ -45,6 +47,8 @@ const showMonthDayCalc = ref(false)
 const yearMeaning = computed(() => getPersonalYearMeaning(props.personalYear.number))
 const monthMeaning = computed(() => props.personalMonth ? getPersonalYearMeaning(props.personalMonth.number) : null)
 const dayMeaning = computed(() => props.personalDay ? getPersonalYearMeaning(props.personalDay.number) : null)
+const secretCycleMeaning = computed(() => props.secretCycle ? getSecretCycleMeaning(props.secretCycle.number) : null)
+const showSecretCycle = ref(false)
 </script>
 
 <template>
@@ -82,6 +86,43 @@ const dayMeaning = computed(() => props.personalDay ? getPersonalYearMeaning(pro
           <span class="mini-number">{{ personalDay.number }}</span>
           <span v-if="dayMeaning" class="mini-name">{{ dayMeaning.name }}</span>
         </div>
+      </div>
+
+      <!-- 秘密循環數 -->
+      <div v-if="secretCycle" class="month-day-row mt-2">
+        <div class="mini-card secret-cycle-card">
+          <span class="mini-label">秘密循環數</span>
+          <span class="mini-number secret-cycle-number">{{ secretCycle.number }}</span>
+          <span v-if="secretCycleMeaning" class="mini-name">{{ secretCycleMeaning.name }}</span>
+        </div>
+      </div>
+
+      <!-- 秘密循環數解釋 -->
+      <div v-if="secretCycleMeaning" class="mt-2">
+        <button class="disclosure-button text-sm" @click="showSecretCycle = !showSecretCycle">
+          <span class="flex items-center">
+            <Icon icon="mdi:eye-circle-outline" class="w-4 h-4 mr-2" />
+            秘密循環數解讀
+          </span>
+          <Icon
+            :icon="showSecretCycle ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+            class="w-5 h-5 text-text-muted"
+          />
+        </button>
+        <NCollapseTransition :show="showSecretCycle">
+          <div class="meaning-section">
+            <p class="meaning-description">{{ secretCycleMeaning.description }}</p>
+            <div class="calculation-steps mt-2">
+              <div
+                v-for="(step, i) in secretCycle.calculationSteps"
+                :key="'sc' + i"
+                class="step-item"
+              >
+                {{ step }}
+              </div>
+            </div>
+          </div>
+        </NCollapseTransition>
       </div>
 
       <!-- 流年數解釋 -->
@@ -238,6 +279,14 @@ const dayMeaning = computed(() => props.personalDay ? getPersonalYearMeaning(pro
 
 .mini-name {
   @apply text-xs text-text-muted mt-0.5;
+}
+
+.secret-cycle-card {
+  background: rgba(197, 164, 103, 0.08);
+}
+
+.secret-cycle-number {
+  color: #C5A467;
 }
 
 .disclosure-button {
