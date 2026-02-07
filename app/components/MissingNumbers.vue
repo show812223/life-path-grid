@@ -72,6 +72,29 @@ function togglePanel(num: number) {
                 <Icon icon="mdi:lightbulb-outline" class="w-4 h-4 mr-1 text-primary flex-shrink-0 mt-0.5" />
                 <span><strong>建議：</strong>{{ item.meaning?.suggestion }}</span>
               </div>
+              <div v-if="item.meaning" class="remediation-grid">
+                <div class="remedy-item">
+                  <Icon icon="mdi:palette" class="w-4 h-4 text-accent flex-shrink-0" />
+                  <div>
+                    <span class="remedy-label">幸運色</span>
+                    <span class="remedy-value">{{ item.meaning.luckyColor }}</span>
+                  </div>
+                </div>
+                <div class="remedy-item">
+                  <Icon icon="mdi:diamond-stone" class="w-4 h-4 text-info flex-shrink-0" />
+                  <div>
+                    <span class="remedy-label">水晶</span>
+                    <span class="remedy-value">{{ item.meaning.crystal }}</span>
+                  </div>
+                </div>
+                <div class="remedy-item">
+                  <Icon icon="mdi:flower-outline" class="w-4 h-4 text-success flex-shrink-0" />
+                  <div>
+                    <span class="remedy-label">精油</span>
+                    <span class="remedy-value">{{ item.meaning.essentialOil }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </NCollapseTransition>
         </div>
@@ -152,5 +175,26 @@ function togglePanel(num: number) {
 .meaning-content .suggestion {
   @apply flex items-start p-3 text-sm text-text-primary
          bg-surface-variant rounded-[10px] leading-relaxed;
+}
+
+.remediation-grid {
+  @apply grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3;
+}
+
+.remedy-item {
+  @apply flex items-start gap-2 p-2.5 rounded-[10px];
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.remedy-item div {
+  @apply flex flex-col;
+}
+
+.remedy-label {
+  @apply text-xs text-text-muted;
+}
+
+.remedy-value {
+  @apply text-sm font-medium text-text-primary;
 }
 </style>

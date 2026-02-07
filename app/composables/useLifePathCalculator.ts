@@ -1,4 +1,4 @@
-import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers } from '~/shared/types'
+import type { BirthDate, LifePathResult, GridData, Connection, SecondaryConnection, TalentNumbers, ZodiacSign, ZodiacInfo, PersonalYearNumber, PersonalMonthNumber, PersonalDayNumber, BirthdayNumber, ConditioningNumber, PinnacleNumbers, ChallengeNumbers, BodyMindSpiritAnalysis, LifeCycleNumbers } from '~/shared/types'
 import { getZodiacNumber, getZodiacInfo } from '~/shared/constants/zodiacData'
 import { SECONDARY_CONNECTION_DEFINITIONS } from '~/shared/constants/connectionMeanings'
 
@@ -361,6 +361,104 @@ function calculatePersonalYearNumber(month: number, day: number, targetYear: num
 }
 
 /**
+ * 計算流月數
+ */
+function calculatePersonalMonthNumber(personalYearNumber: number, targetMonth: number): PersonalMonthNumber {
+  const steps: string[] = []
+  const monthDigits = splitToDigits(targetMonth)
+  const monthSum = monthDigits.reduce((a, b) => a + b, 0)
+
+  const total = personalYearNumber + monthSum
+  steps.push(`流年數(${personalYearNumber}) + 月份(${targetMonth}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, targetMonth, calculationSteps: steps }
+}
+
+/**
+ * 計算流日數
+ */
+function calculatePersonalDayNumber(personalMonthNumber: number, targetDay: number): PersonalDayNumber {
+  const steps: string[] = []
+  const dayDigits = splitToDigits(targetDay)
+  const daySum = dayDigits.reduce((a, b) => a + b, 0)
+
+  const total = personalMonthNumber + daySum
+  steps.push(`流月數(${personalMonthNumber}) + 日期(${targetDay}) = ${total}`)
+
+  let result = total
+  while (result > 9) {
+    const digits = splitToDigits(result)
+    result = digits.reduce((a, b) => a + b, 0)
+    steps.push(`${digits.join(' + ')} = ${result}`)
+  }
+
+  return { number: result, targetDay, calculationSteps: steps }
+}
+
+/**
+ * 身心靈分析
+ */
+function analyzeBodyMindSpirit(gridData: GridData): BodyMindSpiritAnalysis {
+  const bodyNums = [1, 4, 7]
+  const mindNums = [2, 5, 8]
+  const spiritNums = [3, 6, 9]
+
+  const bodyCount = bodyNums.reduce((sum, n) => sum + gridData[n].count, 0)
+  const mindCount = mindNums.reduce((sum, n) => sum + gridData[n].count, 0)
+  const spiritCount = spiritNums.reduce((sum, n) => sum + gridData[n].count, 0)
+
+  let dominant: BodyMindSpiritAnalysis['dominant'] = 'balanced'
+  const max = Math.max(bodyCount, mindCount, spiritCount)
+  const counts = [bodyCount, mindCount, spiritCount]
+  const maxCount = counts.filter((c) => c === max).length
+
+  if (maxCount === 1) {
+    if (max === bodyCount) dominant = 'body'
+    else if (max === mindCount) dominant = 'mind'
+    else dominant = 'spirit'
+  }
+
+  return {
+    body: { count: bodyCount, numbers: bodyNums },
+    mind: { count: mindCount, numbers: mindNums },
+    spirit: { count: spiritCount, numbers: spiritNums },
+    dominant
+  }
+}
+
+/**
+ * 計算生命週期數
+ */
+function calculateLifeCycleNumbers(date: BirthDate): LifeCycleNumbers {
+  const steps: string[] = []
+
+  const earlyNum = reduceWithMaster(date.month)
+  steps.push(`早期週期：月份 ${date.month} → ${earlyNum}`)
+
+  const middleNum = reduceWithMaster(date.day)
+  steps.push(`中期週期：日期 ${date.day} → ${middleNum}`)
+
+  const yearDigits = splitToDigits(date.year)
+  const yearSum = yearDigits.reduce((a, b) => a + b, 0)
+  const lateNum = reduceWithMaster(yearSum)
+  steps.push(`晚期週期：年份 ${date.year}（${yearDigits.join('+')}=${yearSum}）→ ${lateNum}`)
+
+  return {
+    earlyCycle: { number: earlyNum, ageRange: '出生 - 約 30 歲' },
+    middleCycle: { number: middleNum, ageRange: '約 31 - 60 歲' },
+    lateCycle: { number: lateNum, ageRange: '約 61 歲以後' },
+    calculationSteps: steps
+  }
+}
+
+/**
  * 生命靈數計算 Composable
  */
 export function useLifePathCalculator() {
@@ -424,10 +522,30 @@ export function useLifePathCalculator() {
     return calculatePersonalYearNumber(month, day, targetYear)
   }
 
+  function calcPersonalMonth(personalYearNumber: number, targetMonth: number): PersonalMonthNumber {
+    return calculatePersonalMonthNumber(personalYearNumber, targetMonth)
+  }
+
+  function calcPersonalDay(personalMonthNumber: number, targetDay: number): PersonalDayNumber {
+    return calculatePersonalDayNumber(personalMonthNumber, targetDay)
+  }
+
+  function calcBodyMindSpirit(gridData: GridData): BodyMindSpiritAnalysis {
+    return analyzeBodyMindSpirit(gridData)
+  }
+
+  function calcLifeCycles(date: BirthDate): LifeCycleNumbers {
+    return calculateLifeCycleNumbers(date)
+  }
+
   return {
     result: readonly(result),
     calculate,
     calcPersonalYear,
+    calcPersonalMonth,
+    calcPersonalDay,
+    calcBodyMindSpirit,
+    calcLifeCycles,
     reset
   }
 }

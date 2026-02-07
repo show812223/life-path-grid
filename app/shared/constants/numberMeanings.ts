@@ -6,7 +6,8 @@ import type {
   BirthdayNumberMeaning,
   ConditioningNumberMeaning,
   PinnacleNumberMeaning,
-  ChallengeNumberMeaning
+  ChallengeNumberMeaning,
+  LifeCycleMeaning
 } from '~/shared/types'
 
 // 主命數意義
@@ -139,55 +140,82 @@ export const MISSING_NUMBER_MEANINGS: MissingNumberMeaning[] = [
     number: 1,
     name: '缺乏自信與獨立',
     description: '可能在自我主張和獨立決策方面較為薄弱，容易依賴他人的意見。',
-    suggestion: '練習獨立思考，勇於表達自己的想法，培養領導能力。'
+    suggestion: '練習獨立思考，勇於表達自己的想法，培養領導能力。',
+    luckyColor: '紅色',
+    crystal: '紅石榴石、紅碧璽',
+    essentialOil: '肉桂、薑'
   },
   {
     number: 2,
     name: '缺乏合作與敏感',
     description: '可能在人際互動中較不敏感，難以理解他人的感受和需求。',
-    suggestion: '練習傾聽與同理心，學習在團隊中與他人合作。'
+    suggestion: '練習傾聽與同理心，學習在團隊中與他人合作。',
+    luckyColor: '橘色',
+    crystal: '月光石、橙色方解石',
+    essentialOil: '茉莉、依蘭'
   },
   {
     number: 3,
     name: '缺乏表達與創意',
     description: '可能在表達自我和創意發揮方面較為受限，難以將想法傳達出去。',
-    suggestion: '嘗試各種藝術創作，練習口語表達，培養創意思維。'
+    suggestion: '嘗試各種藝術創作，練習口語表達，培養創意思維。',
+    luckyColor: '黃色',
+    crystal: '黃水晶、虎眼石',
+    essentialOil: '檸檬、佛手柑'
   },
   {
     number: 4,
     name: '缺乏紀律與穩定',
     description: '可能在建立規律和穩定基礎方面較為薄弱，做事較缺乏系統性。',
-    suggestion: '建立日常規律，學習制定計畫並堅持執行，培養耐心。'
+    suggestion: '建立日常規律，學習制定計畫並堅持執行，培養耐心。',
+    luckyColor: '綠色',
+    crystal: '綠幽靈、東菱石',
+    essentialOil: '雪松、岩蘭草'
   },
   {
     number: 5,
     name: '缺乏變化與適應',
     description: '可能較抗拒改變，在面對新環境或挑戰時感到不安。',
-    suggestion: '嘗試新事物，培養冒險精神，學習擁抱變化。'
+    suggestion: '嘗試新事物，培養冒險精神，學習擁抱變化。',
+    luckyColor: '天藍色',
+    crystal: '海藍寶、藍紋瑪瑙',
+    essentialOil: '尤加利、薄荷'
   },
   {
     number: 6,
     name: '缺乏責任與關懷',
     description: '可能在承擔責任和照顧他人方面較為薄弱，需要培養服務精神。',
-    suggestion: '練習關心身邊的人，承擔適當責任，培養愛的能力。'
+    suggestion: '練習關心身邊的人，承擔適當責任，培養愛的能力。',
+    luckyColor: '靛藍色',
+    crystal: '青金石、藍晶石',
+    essentialOil: '玫瑰、天竺葵'
   },
   {
     number: 7,
     name: '缺乏內省與分析',
     description: '可能較少進行深度思考和內在探索，傾向於表面認識事物。',
-    suggestion: '培養獨處與反思的習慣，學習深入分析問題，探索靈性層面。'
+    suggestion: '培養獨處與反思的習慣，學習深入分析問題，探索靈性層面。',
+    luckyColor: '紫色',
+    crystal: '紫水晶、舒俱萊石',
+    essentialOil: '薰衣草、乳香'
   },
   {
     number: 8,
     name: '缺乏物質掌控力',
     description: '可能在財務管理和目標達成方面較為薄弱，需要加強執行力。',
-    suggestion: '設定明確目標，學習財務知識，培養成就導向的心態。'
+    suggestion: '設定明確目標，學習財務知識，培養成就導向的心態。',
+    luckyColor: '粉紅色',
+    crystal: '粉晶、紅紋石',
+    essentialOil: '檀香、沒藥'
   },
   {
     number: 9,
     name: '缺乏博愛與寬廣視野',
     description: '可能較專注於個人事務，較少關注更大的社會議題。',
-    suggestion: '培養同理心和寬廣視野，參與公益活動，學習放下與完結。'
+    suggestion: '培養同理心和寬廣視野，參與公益活動，學習放下與完結。',
+    luckyColor: '金色',
+    crystal: '鈦晶、金髮晶',
+    essentialOil: '橙花、白鼠尾草'
   }
 ]
 
@@ -394,4 +422,26 @@ export function getPinnacleNumberMeaning(number: number): PinnacleNumberMeaning 
  */
 export function getChallengeNumberMeaning(number: number): ChallengeNumberMeaning | undefined {
   return CHALLENGE_NUMBER_MEANINGS.find((m) => m.number === number)
+}
+
+// 生命週期數意義
+export const LIFE_CYCLE_MEANINGS: LifeCycleMeaning[] = [
+  { number: 1, name: '獨立與開創', description: '此階段的主題是建立自我認同與獨立性。你需要學習相信自己、培養領導力，勇敢地開創屬於自己的道路。' },
+  { number: 2, name: '合作與敏感', description: '此階段的主題是學習與他人建立和諧關係。你需要培養耐心與同理心，在合作中找到自己的位置。' },
+  { number: 3, name: '創意與表達', description: '此階段的主題是創造力的發揮與自我表達。你會受到藝術和社交的吸引，需要找到適合的方式展現自我。' },
+  { number: 4, name: '穩定與建設', description: '此階段的主題是打好基礎與培養紀律。你需要腳踏實地地工作，建立穩固的生活架構。' },
+  { number: 5, name: '自由與探索', description: '此階段的主題是擁抱變化與多元體驗。你會渴望自由和冒險，需要學習在變動中保持核心方向。' },
+  { number: 6, name: '愛與責任', description: '此階段的主題是家庭、愛與服務。你需要學習承擔責任、照顧他人，同時也照顧好自己。' },
+  { number: 7, name: '內省與智慧', description: '此階段的主題是向內探索與追求智慧。你需要花時間獨處、思考與學習，深入了解生命的意義。' },
+  { number: 8, name: '成就與豐盛', description: '此階段的主題是實現目標與創造物質豐盛。你有機會在事業和財務上取得重大成就。' },
+  { number: 9, name: '完成與奉獻', description: '此階段的主題是完成使命與回饋社會。你會以更寬廣的視野看待人生，投入服務與奉獻的行動中。' },
+  { number: 11, name: '靈性啟發', description: '此階段帶有大師數11的能量，主題是靈性覺醒與啟發他人。你的直覺力特別強，可能經歷深刻的精神體驗。' },
+  { number: 22, name: '宏大實現', description: '此階段帶有大師數22的能量，主題是將遠大理想化為現實。你有機會創造深遠的影響力。' }
+]
+
+/**
+ * 取得生命週期數意義
+ */
+export function getLifeCycleMeaning(number: number): LifeCycleMeaning | undefined {
+  return LIFE_CYCLE_MEANINGS.find((m) => m.number === number)
 }

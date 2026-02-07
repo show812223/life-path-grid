@@ -173,6 +173,9 @@ export interface MissingNumberMeaning {
   name: string
   description: string
   suggestion: string
+  luckyColor: string
+  crystal: string
+  essentialOil: string
 }
 
 // 流年數
@@ -231,6 +234,43 @@ export interface PinnacleNumberMeaning {
 
 // 挑戰數意義
 export interface ChallengeNumberMeaning {
+  number: number
+  name: string
+  description: string
+}
+
+// 流月數
+export interface PersonalMonthNumber {
+  number: number
+  targetMonth: number
+  calculationSteps: string[]
+}
+
+// 流日數
+export interface PersonalDayNumber {
+  number: number
+  targetDay: number
+  calculationSteps: string[]
+}
+
+// 身心靈分析
+export interface BodyMindSpiritAnalysis {
+  body: { count: number; numbers: number[] }
+  mind: { count: number; numbers: number[] }
+  spirit: { count: number; numbers: number[] }
+  dominant: 'body' | 'mind' | 'spirit' | 'balanced'
+}
+
+// 生命週期數
+export interface LifeCycleNumbers {
+  earlyCycle: { number: number; ageRange: string }
+  middleCycle: { number: number; ageRange: string }
+  lateCycle: { number: number; ageRange: string }
+  calculationSteps: string[]
+}
+
+// 生命週期數意義
+export interface LifeCycleMeaning {
   number: number
   name: string
   description: string
