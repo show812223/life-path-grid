@@ -102,6 +102,14 @@ export interface ConnectionMeaning {
   traits: string[]
 }
 
+// 天賦數意義
+export interface TalentNumberMeaning {
+  number: number
+  name: string
+  description: string
+  talents: string[]
+}
+
 // 缺數意義
 export interface MissingNumberMeaning {
   number: number

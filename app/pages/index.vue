@@ -85,14 +85,9 @@ function handleChangeYear(year: number) {
                 class="mb-6"
               />
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <TalentNumbers
-                  :talent-numbers="result.talentNumbers"
-                  class="mb-6"
-                />
-
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <!-- 星座資訊 -->
-                <NCard v-if="result.zodiacInfo" class="zodiac-info mb-6" :bordered="false">
+                <NCard v-if="result.zodiacInfo" class="zodiac-info" :bordered="false">
                   <div class="section-header mb-2">
                     <Icon :icon="`mdi:zodiac-${result.zodiacInfo.sign}`" class="w-5 h-5 mr-2 text-info" />
                     <span class="section-title">星座數</span>
@@ -110,10 +105,14 @@ function handleChangeYear(year: number) {
                 <PersonalYearNumber
                   v-if="personalYear"
                   :personal-year="personalYear"
-                  class="mb-6"
                   @change-year="handleChangeYear"
                 />
               </div>
+
+              <TalentNumbers
+                :talent-numbers="result.talentNumbers"
+                class="mb-6"
+              />
 
               <MissingNumbers
                 :missing-numbers="result.missingNumbers"

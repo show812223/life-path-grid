@@ -1,4 +1,4 @@
-import type { NumberMeaning, MissingNumberMeaning } from '~/shared/types'
+import type { NumberMeaning, MissingNumberMeaning, TalentNumberMeaning } from '~/shared/types'
 
 // 主命數意義
 export const NUMBER_MEANINGS: NumberMeaning[] = [
@@ -157,6 +157,71 @@ export const MISSING_NUMBER_MEANINGS: MissingNumberMeaning[] = [
     suggestion: '培養同理心和寬廣視野，參與公益活動，學習放下與完結。'
   }
 ]
+
+// 天賦數意義
+export const TALENT_NUMBER_MEANINGS: TalentNumberMeaning[] = [
+  {
+    number: 1,
+    name: '開創天賦',
+    description: '你天生具備領導與開創的能力，擅長獨立思考並帶領他人走向新方向。面對未知時，你能展現勇氣與果斷力。',
+    talents: ['領導開創', '獨立決策', '果斷行動', '開拓精神']
+  },
+  {
+    number: 2,
+    name: '協調天賦',
+    description: '你天生擅長感知他人的情緒與需求，具備出色的協調與合作能力。在團隊中，你是不可或缺的潤滑劑。',
+    talents: ['人際協調', '細膩敏感', '合作共融', '外交溝通']
+  },
+  {
+    number: 3,
+    name: '表達天賦',
+    description: '你天生具備豐富的創造力與表達能力，擅長以言語、文字或藝術形式傳遞想法，感染力十足。',
+    talents: ['創意表達', '藝術天賦', '語言魅力', '樂觀感染']
+  },
+  {
+    number: 4,
+    name: '組織天賦',
+    description: '你天生擁有出色的組織與規劃能力，擅長將混亂化為秩序，打造穩固且可靠的基礎架構。',
+    talents: ['系統規劃', '務實執行', '嚴謹有序', '穩定建設']
+  },
+  {
+    number: 5,
+    name: '應變天賦',
+    description: '你天生具備靈活的適應力與敏銳的觀察力，能夠在變化中找到機會，善於應對各種挑戰。',
+    talents: ['靈活應變', '多元學習', '冒險探索', '隨機應變']
+  },
+  {
+    number: 6,
+    name: '關懷天賦',
+    description: '你天生擁有溫暖的關懷與強烈的責任感，擅長照顧他人並營造和諧的環境，是天生的守護者。',
+    talents: ['溫暖關懷', '責任承擔', '和諧營造', '療癒陪伴']
+  },
+  {
+    number: 7,
+    name: '洞察天賦',
+    description: '你天生具備深度的分析力與直覺，擅長透過研究與內省發現事物的本質，追求真理與智慧。',
+    talents: ['深度分析', '直覺洞察', '研究探索', '靈性感知']
+  },
+  {
+    number: 8,
+    name: '統御天賦',
+    description: '你天生擁有掌控全局的能力與強大的執行力，擅長管理資源、達成目標，並創造豐盛的成果。',
+    talents: ['資源整合', '目標達成', '權威管理', '豐盛創造']
+  },
+  {
+    number: 9,
+    name: '博愛天賦',
+    description: '你天生具備寬廣的視野與悲憫之心，擅長以大愛的精神服務他人，為社會帶來正面的影響力。',
+    talents: ['寬廣視野', '無私奉獻', '智慧傳承', '人道關懷']
+  }
+]
+
+/**
+ * 根據數字取得天賦數意義
+ */
+export function getTalentNumberMeaning(number: number): TalentNumberMeaning | undefined {
+  return TALENT_NUMBER_MEANINGS.find((m) => m.number === number)
+}
 
 /**
  * 根據數字取得意義
