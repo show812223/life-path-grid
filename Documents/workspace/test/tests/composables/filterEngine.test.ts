@@ -58,3 +58,50 @@ describe('isConditionActive', () => {
     expect(isConditionActive({ ...base, value: 0 })).toBe(true)
   })
 })
+
+import { expandToSameCategory } from '~/composables/filterEngine'
+import type { FilterCtx } from '~/composables/filterTypes'
+
+const makeCtx = (overrides: Partial<FilterCtx> = {}): FilterCtx => ({
+  modelId: 'M',
+  components: [],
+  byExternalId: new Map(),
+  types: new Map(),
+  spaces: new Map(),
+  floors: new Map(),
+  zones: [],
+  systems: [],
+  attributesIndex: new Map(),
+  bySpace: new Map(),
+  byFloor: new Map(),
+  byZone: new Map(),
+  bySystem: new Map(),
+  byType: new Map(),
+  dim: () => { throw new Error('not used') },
+  ...overrides
+})
+
+describe('expandToSameCategory', () => {
+  it('expands matched components to all components sharing the same Type.Category', () => {
+    const comps = [
+      { modelId: 'M', externalId: 'e1', dbId: 0, name: 'C1', typeName: 'T1' },
+      { modelId: 'M', externalId: 'e2', dbId: 0, name: 'C2', typeName: 'T2' },
+      { modelId: 'M', externalId: 'e3', dbId: 0, name: 'C3', typeName: 'T3' }
+    ] as any
+    const ctx = makeCtx({
+      components: comps,
+      byExternalId: new Map(comps.map((c: any) => [c.externalId, c])),
+      types: new Map([
+        ['T1', { modelId: 'M', name: 'T1', category: 'cat-A' } as any],
+        ['T2', { modelId: 'M', name: 'T2', category: 'cat-A' } as any],
+        ['T3', { modelId: 'M', name: 'T3', category: 'cat-B' } as any]
+      ]),
+      byType: new Map([
+        ['T1', new Set(['e1'])],
+        ['T2', new Set(['e2'])],
+        ['T3', new Set(['e3'])]
+      ])
+    })
+    expect([...expandToSameCategory(ctx, new Set(['e1']))].sort()).toEqual(['e1', 'e2'])
+  })
+})

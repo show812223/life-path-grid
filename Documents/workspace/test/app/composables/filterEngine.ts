@@ -1,6 +1,7 @@
 import type {
   ChainItem,
-  FilterCondition
+  FilterCondition,
+  FilterCtx
 } from './filterTypes'
 
 export const itemKey = (item: ChainItem): string =>
@@ -23,4 +24,23 @@ export function isConditionActive(c: FilterCondition): boolean {
     return Object.values(c.value).some(v => v !== undefined && v !== null && v !== '')
   }
   return true
+}
+
+export function expandToSameCategory(
+  ctx: FilterCtx,
+  typeMatchedIds: Set<string>
+): Set<string> {
+  const cats = new Set<string>()
+  for (const id of typeMatchedIds) {
+    const c = ctx.byExternalId.get(id)
+    const t = c?.typeName ? ctx.types.get(c.typeName) : undefined
+    if (t?.category) cats.add(t.category)
+  }
+  const result = new Set<string>()
+  for (const t of ctx.types.values()) {
+    if (t.category && cats.has(t.category)) {
+      for (const id of ctx.byType.get(t.name) ?? []) result.add(id)
+    }
+  }
+  return result
 }
