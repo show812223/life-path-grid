@@ -158,6 +158,80 @@ const componentLength = numberRangeDim('component.length', 'Length', 'length')
 const componentInstallationDate = dateRangeDim('component.installationDate', 'Installation Date', 'installationDate')
 const componentWarrantyStartDate = dateRangeDim('component.warrantyStartDate', 'Warranty Start', 'warrantyStartDate')
 
+const mapDim = (
+  id: string, label: string, group: FilterDimension['group'],
+  pick: (ctx: FilterCtx) => Map<string, Set<string>>,
+  optionLister: (ctx: FilterCtx) => string[]
+): FilterDimension => ({
+  id, label, group, ops: ['eq', 'in'],
+  loadOptions: optionLister,
+  evaluate: (ctx, op, value) => {
+    const vals = op === 'in' ? (value as string[]) : [value as string]
+    const out = new Set<string>()
+    for (const v of vals) for (const id of pick(ctx).get(v) ?? []) out.add(id)
+    return out
+  }
+})
+
+const spaceName = mapDim('space.name', 'Space', 'Space',
+  (c) => c.bySpace,
+  (c) => [...c.bySpace.keys()].sort()
+)
+const spaceCategory: FilterDimension = {
+  id: 'space.category', label: 'Space 類別', group: 'Space', ops: ['eq', 'in'],
+  loadOptions: (ctx) => [...new Set([...ctx.spaces.values()].map(s => s.category).filter((x): x is string => !!x))].sort(),
+  evaluate: (ctx, op, value) => {
+    const vals = new Set(op === 'in' ? (value as string[]) : [value as string])
+    const out = new Set<string>()
+    for (const s of ctx.spaces.values()) {
+      if (!s.category || !vals.has(s.category)) continue
+      for (const id of ctx.bySpace.get(s.name) ?? []) out.add(id)
+    }
+    return out
+  }
+}
+
+const floorName = mapDim('floor.name', 'Floor', 'Floor',
+  (c) => c.byFloor,
+  (c) => [...c.byFloor.keys()].sort()
+)
+
+const zoneName = mapDim('zone.name', 'Zone', 'Zone',
+  (c) => c.byZone,
+  (c) => [...c.byZone.keys()].sort()
+)
+const zoneCategory: FilterDimension = {
+  id: 'zone.category', label: 'Zone 類別', group: 'Zone', ops: ['eq', 'in'],
+  loadOptions: (ctx) => [...new Set(ctx.zones.map(z => z.category).filter((x): x is string => !!x))].sort(),
+  evaluate: (ctx, op, value) => {
+    const vals = new Set(op === 'in' ? (value as string[]) : [value as string])
+    const out = new Set<string>()
+    for (const z of ctx.zones) {
+      if (!z.category || !vals.has(z.category)) continue
+      for (const id of ctx.byZone.get(z.name) ?? []) out.add(id)
+    }
+    return out
+  }
+}
+
+const systemName = mapDim('system.name', 'System', 'System',
+  (c) => c.bySystem,
+  (c) => [...c.bySystem.keys()].sort()
+)
+const systemCategory: FilterDimension = {
+  id: 'system.category', label: 'System 類別', group: 'System', ops: ['eq', 'in'],
+  loadOptions: (ctx) => [...new Set(ctx.systems.map(s => s.category).filter((x): x is string => !!x))].sort(),
+  evaluate: (ctx, op, value) => {
+    const vals = new Set(op === 'in' ? (value as string[]) : [value as string])
+    const out = new Set<string>()
+    for (const sys of ctx.systems) {
+      if (!sys.category || !vals.has(sys.category)) continue
+      for (const id of ctx.bySystem.get(sys.name) ?? []) out.add(id)
+    }
+    return out
+  }
+}
+
 export const REGISTRY: Record<string, FilterDimension> = {
   'type.name': typeName,
   'type.category': typeCategory,
@@ -172,7 +246,14 @@ export const REGISTRY: Record<string, FilterDimension> = {
   'component.area': componentArea,
   'component.length': componentLength,
   'component.installationDate': componentInstallationDate,
-  'component.warrantyStartDate': componentWarrantyStartDate
+  'component.warrantyStartDate': componentWarrantyStartDate,
+  'space.name': spaceName,
+  'space.category': spaceCategory,
+  'floor.name': floorName,
+  'zone.name': zoneName,
+  'zone.category': zoneCategory,
+  'system.name': systemName,
+  'system.category': systemCategory
 }
 
 export const getDim = (id: string): FilterDimension => {

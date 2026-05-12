@@ -107,3 +107,43 @@ describe('REGISTRY component dimensions', () => {
     expect([...REGISTRY['component.installationDate'].evaluate(ctx, 'dateRange', { from: '2020-06-01' })]).toEqual(['e2'])
   })
 })
+
+describe('REGISTRY space / floor / zone / system', () => {
+  const ctx = makeCtx({
+    bySpace: new Map([['1AC1', new Set(['e1', 'e2'])], ['1AC2', new Set(['e3'])]]),
+    byFloor: new Map([['1F', new Set(['e1', 'e2', 'e3'])], ['2F', new Set(['e4'])]]),
+    byZone: new Map([['Admin', new Set(['e1'])]]),
+    bySystem: new Map([['HVAC', new Set(['e2', 'e3'])]]),
+    spaces: new Map([
+      ['1AC1', { modelId: 'M', name: '1AC1', category: 'Waiting' } as any],
+      ['1AC2', { modelId: 'M', name: '1AC2', category: 'Office' } as any]
+    ]),
+    zones: [
+      { modelId: 'M', name: 'Admin', category: 'Occupancy', spaceNames: [] } as any
+    ],
+    systems: [
+      { modelId: 'M', name: 'HVAC', category: 'Air', componentExternalIds: [] } as any
+    ]
+  })
+  it('space.name eq', () => {
+    expect([...REGISTRY['space.name'].evaluate(ctx, 'eq', '1AC1')].sort()).toEqual(['e1', 'e2'])
+  })
+  it('space.category eq', () => {
+    expect([...REGISTRY['space.category'].evaluate(ctx, 'eq', 'Waiting')].sort()).toEqual(['e1', 'e2'])
+  })
+  it('floor.name eq', () => {
+    expect([...REGISTRY['floor.name'].evaluate(ctx, 'eq', '1F')].sort()).toEqual(['e1', 'e2', 'e3'])
+  })
+  it('zone.name eq', () => {
+    expect([...REGISTRY['zone.name'].evaluate(ctx, 'eq', 'Admin')]).toEqual(['e1'])
+  })
+  it('zone.category eq', () => {
+    expect([...REGISTRY['zone.category'].evaluate(ctx, 'eq', 'Occupancy')]).toEqual(['e1'])
+  })
+  it('system.name eq', () => {
+    expect([...REGISTRY['system.name'].evaluate(ctx, 'eq', 'HVAC')].sort()).toEqual(['e2', 'e3'])
+  })
+  it('system.category eq', () => {
+    expect([...REGISTRY['system.category'].evaluate(ctx, 'eq', 'Air')].sort()).toEqual(['e2', 'e3'])
+  })
+})
