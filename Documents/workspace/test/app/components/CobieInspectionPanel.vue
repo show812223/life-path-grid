@@ -19,6 +19,7 @@ const component = ref<ExtractedComponent | undefined>()
 const type = ref<ExtractedType | undefined>()
 const space = ref<ExtractedSpace | undefined>()
 const systemNames = ref<string[]>([])
+const sameCategoryTypeNames = ref<string[]>([])
 const loading = ref(false)
 
 const reload = async () => {
@@ -26,6 +27,7 @@ const reload = async () => {
   type.value = undefined
   space.value = undefined
   systemNames.value = []
+  sameCategoryTypeNames.value = []
   const extId = props.element?.externalId
   if (!extId || !props.modelId) return
   loading.value = true
@@ -39,6 +41,12 @@ const reload = async () => {
     systemNames.value = sysList
       .filter(s => s.componentExternalIds?.includes(extId))
       .map(s => s.name)
+    if (type.value?.category) {
+      const all = await store.listTypes(props.modelId)
+      sameCategoryTypeNames.value = all
+        .filter(t => t.category === type.value!.category)
+        .map(t => t.name)
+    }
   } finally {
     loading.value = false
   }
@@ -63,6 +71,10 @@ const LABEL_TO_MODE: Record<string, Exclude<FilterMode, null>> = {
 const rowAction = (row: Row): RowAction => {
   if (row.label === 'Name' && props.element) return 'focus'
   if (!row.value || row.value === '—') return null
+  if (row.label === 'Type Category') {
+    if (sameCategoryTypeNames.value.length === 0) return null
+    return { mode: 'type', values: sameCategoryTypeNames.value }
+  }
   const mode = LABEL_TO_MODE[row.label]
   if (!mode) return null
   // System may carry multiple values joined by "、"; split for filter.

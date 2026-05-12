@@ -136,7 +136,6 @@ const onInspectFilter = (mode: 'floor' | 'space' | 'type' | 'system', values: st
   filter.setPendingMode(mode)
   for (const v of values) filter.togglePending(v)
   filter.apply()
-  railTab.value = 'filter'
 }
 
 const clearIsolation = () => {
