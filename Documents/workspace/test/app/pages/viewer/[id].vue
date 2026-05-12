@@ -4,7 +4,7 @@ import { useCobieFilter } from '~/composables/useCobieFilter'
 import CobieFilterPanel from '~/components/CobieFilterPanel.vue'
 import CobieFilterStatusBar from '~/components/CobieFilterStatusBar.vue'
 
-const viewerRef = ref<any | null>(null)
+const viewerRef = shallowRef<any | null>(null)
 
 definePageMeta({ layout: 'default' })
 

@@ -47,7 +47,7 @@ export interface UseCobieFilterReturn {
 
 export function useCobieFilter(opts: {
   modelId: MaybeRef<string>
-  viewer: Ref<any | null>
+  viewer: Ref<any | null>            // ShallowRef recommended for Forge viewer (avoid Proxy)
 }): UseCobieFilterReturn {
   const { ctx } = useFilterCtx(opts.modelId)
   const highlight = useViewerHighlight()
