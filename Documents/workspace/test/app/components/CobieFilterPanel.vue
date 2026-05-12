@@ -1,193 +1,225 @@
 <script setup lang="ts">
-import type { UseCobieFilterReturn } from '~/composables/useCobieFilter'
-import FilterConditionCard from './FilterConditionCard.vue'
-import FilterOrGroupCard from './FilterOrGroupCard.vue'
-import { isConditionActive } from '~/composables/filterEngine'
+import type { UseCobieFilterReturn, FilterMode } from '~/composables/useCobieFilter'
 
 const props = defineProps<{ filter: UseCobieFilterReturn }>()
 
-const hitCount = computed(() => {
-  const r = props.filter.result.value
-  return r.active ? r.finalSet.size : 0
-})
-const totalCount = computed(() =>
-  props.filter.ctx.value ? props.filter.ctx.value.components.length : 0
-)
-const missingCount = computed(() => {
-  const r = props.filter.result.value
-  return r.active ? r.missingInModel : 0
-})
-
-const firstActiveItemKey = computed<string | null>(() => {
-  for (const item of props.filter.chain.value.items) {
-    if (item.kind === 'single') {
-      if (isConditionActive(item.condition)) return item.condition.id
-    } else {
-      if (item.conditions.some(isConditionActive)) return item.id
-    }
-  }
-  return null
-})
-
-const onCopyExtIds = async () => {
-  const text = props.filter.exportExtIds()
-  if (!text) return
-  await navigator.clipboard.writeText(text)
+const MODE_LABELS: Record<Exclude<FilterMode, null>, string> = {
+  floor: '樓層',
+  space: '空間',
+  type: '類型',
+  system: '系統'
 }
+const MODES: Array<Exclude<FilterMode, null>> = ['floor', 'space', 'type', 'system']
+
+const search = ref('')
+
+watch(
+  () => props.filter.pendingMode.value,
+  () => { search.value = '' }
+)
+
+const filteredOptions = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  const opts = props.filter.pendingOptions.value
+  if (!q) return opts
+  return opts.filter(o => o.toLowerCase().includes(q))
+})
+
+const onChipClick = (m: Exclude<FilterMode, null>) => {
+  if (props.filter.pendingMode.value === m) {
+    props.filter.setPendingMode(null)
+  } else {
+    props.filter.setPendingMode(m)
+  }
+}
+
+const chipCount = (m: Exclude<FilterMode, null>) => {
+  return props.filter.pendingMode.value === m ? props.filter.pendingSelected.value.size : 0
+}
+
+const showEmptyMode = computed(() =>
+  props.filter.pendingMode.value !== null && props.filter.pendingOptions.value.length === 0
+)
 </script>
 
 <template>
   <div class="filter-panel">
     <header class="filter-head">
-      <h3 class="filter-title">篩選器</h3>
+      <h3 class="filter-title">篩選</h3>
       <v-spacer />
-      <span class="filter-badge t-mono">{{ hitCount }} / {{ totalCount }}</span>
-      <v-btn icon="mdi-broom" variant="text" size="small" title="清除全部" aria-label="清除全部" @click="filter.clearAll()" />
+      <span v-if="filter.appliedMode.value" class="filter-badge t-mono">
+        {{ filter.hitCount.value }} / {{ filter.totalCount.value }}
+      </span>
     </header>
 
     <v-divider />
 
-    <div class="filter-body">
-      <v-switch
-        :model-value="filter.enabled.value"
-        @update:model-value="(v) => filter.enabled.value = !!v"
-        label="套用到模型"
-        color="primary"
-        density="compact"
-        hide-details
-        class="filter-toggle"
-      />
-
-      <div v-if="filter.chain.value.items.length === 0" class="empty">
-        <v-icon icon="mdi-filter-variant-plus" size="32" color="grey-lighten-1" />
-        <div>尚無條件，點下方「+」加入</div>
-      </div>
-
-      <template v-else>
-        <template v-for="item in filter.chain.value.items" :key="item.kind === 'single' ? item.condition.id : item.id">
-          <FilterConditionCard
-            v-if="item.kind === 'single'"
-            :condition="item.condition"
-            :ctx="filter.ctx.value"
-            :is-first-active="firstActiveItemKey === item.condition.id"
-            @update="(p) => filter.updateCondition(item.condition.id, p)"
-            @remove="filter.removeItem(item.condition.id)"
-          />
-          <FilterOrGroupCard
-            v-else
-            :group-id="item.id"
-            :conditions="item.conditions"
-            :ctx="filter.ctx.value"
-            :available-dimensions="filter.availableDimensions"
-            :is-first-active="firstActiveItemKey === item.id"
-            @update-condition="(cid, p) => filter.updateCondition(cid, p)"
-            @remove-condition="(cid) => filter.removeConditionFromGroup(item.id, cid)"
-            @add-condition="(dim) => filter.addConditionToGroup(item.id, dim)"
-            @remove-group="filter.removeItem(item.id)"
-          />
-        </template>
-      </template>
-
-      <div class="add-row">
-        <v-btn
-          variant="tonal"
-          size="small"
-          prepend-icon="mdi-plus"
-          @click="filter.addEmptyCondition()"
-        >
-          加入條件
-        </v-btn>
-      </div>
+    <div v-if="filter.indexLoading.value" class="loading">
+      <v-progress-circular indeterminate size="20" width="2" />
+      <span>載入索引中…</span>
     </div>
 
-    <v-divider />
+    <template v-else>
+      <div class="chip-row">
+        <v-chip
+          v-for="m in MODES"
+          :key="m"
+          :color="filter.pendingMode.value === m ? 'primary' : undefined"
+          :variant="filter.pendingMode.value === m ? 'flat' : 'tonal'"
+          size="small"
+          @click="onChipClick(m)"
+        >
+          {{ MODE_LABELS[m] }}<template v-if="chipCount(m) > 0"> · {{ chipCount(m) }}</template>
+        </v-chip>
+      </div>
 
-    <footer v-if="filter.result.value.active" class="filter-foot">
-      <div v-if="missingCount > 0" class="warn">
-        <v-icon icon="mdi-alert" size="14" />
-        {{ missingCount }} 件未在模型中找到
+      <div v-if="filter.pendingMode.value" class="options-section">
+        <div class="options-head">
+          <v-btn
+            size="x-small"
+            variant="text"
+            :disabled="filter.pendingOptions.value.length === 0"
+            @click="filter.selectAllPending()"
+          >全選</v-btn>
+          <v-btn
+            size="x-small"
+            variant="text"
+            :disabled="filter.pendingSelected.value.size === 0"
+            @click="filter.clearPendingSelection()"
+          >清空</v-btn>
+        </div>
+        <v-text-field
+          v-model="search"
+          density="compact"
+          variant="outlined"
+          placeholder="搜尋…"
+          hide-details
+          clearable
+          prepend-inner-icon="mdi-magnify"
+          class="options-search"
+        />
+        <div v-if="showEmptyMode" class="empty-mode">
+          無 {{ MODE_LABELS[filter.pendingMode.value!] }} 資料
+        </div>
+        <div v-else class="options-list">
+          <v-checkbox
+            v-for="opt in filteredOptions"
+            :key="opt"
+            :model-value="filter.pendingSelected.value.has(opt)"
+            :label="opt"
+            density="compact"
+            hide-details
+            color="primary"
+            @update:model-value="filter.togglePending(opt)"
+          />
+        </div>
       </div>
-      <div v-if="filter.result.value.emptyAtStep != null" class="error">
-        <v-icon icon="mdi-close-circle" size="14" />
-        此條件後無命中
+
+      <div class="apply-row">
+        <v-btn
+          size="small"
+          variant="text"
+          :disabled="filter.appliedMode.value === null && filter.pendingMode.value === null && filter.pendingSelected.value.size === 0"
+          @click="filter.clear()"
+        >清除</v-btn>
+        <v-spacer />
+        <v-btn
+          size="small"
+          color="primary"
+          variant="flat"
+          :disabled="!filter.canApply.value"
+          @click="filter.apply()"
+        >
+          篩選<span v-if="filter.canApply.value" class="dirty-dot" />
+        </v-btn>
       </div>
-      <div class="foot-actions">
-        <v-btn size="small" variant="text" prepend-icon="mdi-crosshairs-gps" @click="filter.fitToHits()">Fit to view</v-btn>
-        <v-btn size="small" variant="text" prepend-icon="mdi-content-copy" :disabled="hitCount === 0" @click="onCopyExtIds">複製 ExtIDs</v-btn>
-      </div>
-      <div v-if="filter.hitsGroupedByType.value.length" class="hits-by-type">
-        <div v-for="g in filter.hitsGroupedByType.value" :key="g.typeName" class="hits-group">
-          <div class="hits-group-title">
-            <span>{{ g.typeName }}</span>
-            <span class="t-mono">{{ g.components.length }}</span>
+
+      <v-divider v-if="filter.appliedMode.value" />
+
+      <div v-if="filter.appliedMode.value" class="results">
+        <div class="results-head">結果（{{ filter.hitCount.value }}）</div>
+        <div v-if="filter.hitsAsList.value.length === 0" class="empty-hits">
+          此條件下無命中
+        </div>
+        <div v-else class="results-list">
+          <div
+            v-for="item in filter.hitsAsList.value"
+            :key="item.extId"
+            class="result-row"
+            @click="filter.focusOne(item.extId)"
+          >
+            <span class="result-name">{{ item.name || '(未命名)' }}</span>
+            <span v-if="item.typeName" class="result-type">{{ item.typeName }}</span>
           </div>
         </div>
       </div>
-    </footer>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.filter-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.filter-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-}
+.filter-panel { display: flex; flex-direction: column; height: 100%; }
+.filter-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
 .filter-title { font-size: 13px; font-weight: 700; margin: 0; }
 .filter-badge { font-size: 11px; color: var(--primary); }
-.filter-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px 12px;
+.loading {
+  padding: 16px 12px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-}
-.filter-toggle { margin-bottom: 4px; }
-.empty {
-  padding: 24px 8px;
-  text-align: center;
   font-size: 12px;
   color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
 }
-.add-row {
-  display: flex;
-  gap: 6px;
-  padding-top: 4px;
-}
-.filter-foot {
-  padding: 10px 12px;
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
+.options-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  padding: 0 12px 8px;
+  flex: 1;
+  min-height: 0;
 }
-.warn { color: #B45309; display: flex; align-items: center; gap: 4px; }
-.error { color: #B91C1C; display: flex; align-items: center; gap: 4px; }
-.foot-actions { display: flex; gap: 4px; }
-.hits-by-type {
-  max-height: 180px;
+.options-head { display: flex; gap: 4px; }
+.options-search :deep(input) { font-size: 12px; }
+.options-list {
+  flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  border: 1px solid var(--border, rgba(0,0,0,0.08));
+  border-radius: 4px;
+  padding: 4px 8px;
+  max-height: 260px;
 }
-.hits-group-title {
+.options-list :deep(.v-selection-control) { min-height: 24px; }
+.options-list :deep(.v-label) { font-size: 12px; }
+.empty-mode { padding: 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
+.apply-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 6px;
+}
+.dirty-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  margin-left: 6px;
+}
+.results { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.results-head { padding: 8px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.results-list { flex: 1; overflow-y: auto; }
+.result-row {
   display: flex;
   justify-content: space-between;
-  padding: 4px 8px;
-  background: var(--surface-2);
-  border-radius: 4px;
-  font-size: 11px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-top: 1px solid var(--border, rgba(0,0,0,0.04));
 }
+.result-row:hover { background: var(--surface-2); }
+.result-name { word-break: break-word; }
+.result-type { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+.empty-hits { padding: 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
 </style>
