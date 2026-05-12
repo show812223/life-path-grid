@@ -3,6 +3,7 @@ import type { SelectedElement } from '~/components/ForgeViewer.client.vue'
 import { useCobieFilter } from '~/composables/useCobieFilter'
 import CobieFilterPanel from '~/components/CobieFilterPanel.vue'
 import CobieFilterStatusBar from '~/components/CobieFilterStatusBar.vue'
+import CobieInspectionPanel from '~/components/CobieInspectionPanel.vue'
 
 const viewerRef = shallowRef<any | null>(null)
 
@@ -36,7 +37,7 @@ if (!model.value) {
 
 const selectedElement = ref<SelectedElement | null>(null)
 const railOpen = ref(true)
-const railTab = ref<'cobie' | 'docs' | 'props' | 'filter'>('cobie')
+const railTab = ref<'cobie' | 'docs' | 'props' | 'filter' | 'inspect'>('cobie')
 
 const onSelect = (el: SelectedElement | null) => {
   selectedElement.value = el
@@ -195,6 +196,17 @@ const runDiagnostic = async () => {
   diagnostic.value = await inspectCobie(v)
   diagnosticOpen.value = true
 }
+
+const inspectComponent = ref<Awaited<ReturnType<typeof store.getComponent>>>()
+watch(
+  () => [selectedElement.value?.externalId, modelId.value] as const,
+  async ([extId, id]) => {
+    inspectComponent.value = extId && id ? await store.getComponent(id, extId) : undefined
+    if (!inspectComponent.value && railTab.value === 'inspect') railTab.value = 'cobie'
+  },
+  { immediate: true }
+)
+const showInspectTab = computed(() => !!inspectComponent.value)
 
 const docCount = ref(0)
 // Doc count placeholder; documents tab is empty until separate ingestion is added.
@@ -424,6 +436,15 @@ const copyTreeDump = async () => {
             <v-icon icon="mdi-filter-variant" size="16" />
             <span>篩選</span>
           </button>
+          <button
+            v-if="showInspectTab"
+            class="rail-tab"
+            :class="{ active: railTab === 'inspect' }"
+            @click="railTab = 'inspect'"
+          >
+            <v-icon icon="mdi-clipboard-check-outline" size="16" />
+            <span>檢查項目</span>
+          </button>
         </div>
 
         <div class="rail-content">
@@ -436,6 +457,11 @@ const copyTreeDump = async () => {
           <DocumentList v-else-if="railTab === 'docs'" :element="selectedElement" :model-id="modelId" />
           <PropertyPanel v-else-if="railTab === 'props'" :element="selectedElement" />
           <CobieFilterPanel v-else-if="railTab === 'filter'" :filter="filter" />
+          <CobieInspectionPanel
+            v-else-if="railTab === 'inspect'"
+            :element="selectedElement"
+            :model-id="modelId"
+          />
         </div>
       </aside>
     </div>
