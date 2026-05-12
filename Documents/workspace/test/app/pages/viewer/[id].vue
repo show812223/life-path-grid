@@ -37,7 +37,7 @@ if (!model.value) {
 
 const selectedElement = ref<SelectedElement | null>(null)
 const railOpen = ref(true)
-const railTab = ref<'cobie' | 'docs' | 'props' | 'filter' | 'inspect'>('cobie')
+const railTab = ref<'inspect' | 'docs' | 'props' | 'filter'>('inspect')
 
 const onSelect = (el: SelectedElement | null) => {
   selectedElement.value = el
@@ -182,11 +182,6 @@ const clearCobie = async () => {
   }
 }
 
-const onHighlight = async (externalIds: string[]) => {
-  const v = (window as any).__viewer
-  if (v && externalIds.length > 0) await focusElements(v, externalIds)
-}
-
 import type { CobieDiagnostic } from '~/composables/extractCobie'
 const diagnostic = ref<CobieDiagnostic | null>(null)
 const diagnosticOpen = ref(false)
@@ -196,17 +191,6 @@ const runDiagnostic = async () => {
   diagnostic.value = await inspectCobie(v)
   diagnosticOpen.value = true
 }
-
-const inspectComponent = ref<Awaited<ReturnType<typeof store.getComponent>>>()
-watch(
-  () => [selectedElement.value?.externalId, modelId.value] as const,
-  async ([extId, id]) => {
-    inspectComponent.value = extId && id ? await store.getComponent(id, extId) : undefined
-    if (!inspectComponent.value && railTab.value === 'inspect') railTab.value = 'cobie'
-  },
-  { immediate: true }
-)
-const showInspectTab = computed(() => !!inspectComponent.value)
 
 const docCount = ref(0)
 // Doc count placeholder; documents tab is empty until separate ingestion is added.
@@ -397,11 +381,11 @@ const copyTreeDump = async () => {
         <div class="rail-tabs">
           <button
             class="rail-tab"
-            :class="{ active: railTab === 'cobie' }"
-            @click="railTab = 'cobie'"
+            :class="{ active: railTab === 'inspect' }"
+            @click="railTab = 'inspect'"
           >
-            <v-icon icon="mdi-database-outline" size="16" />
-            <span>COBie 資料</span>
+            <v-icon icon="mdi-clipboard-check-outline" size="16" />
+            <span>檢查項目</span>
           </button>
           <button
             class="rail-tab"
@@ -436,32 +420,17 @@ const copyTreeDump = async () => {
             <v-icon icon="mdi-filter-variant" size="16" />
             <span>篩選</span>
           </button>
-          <button
-            v-if="showInspectTab"
-            class="rail-tab"
-            :class="{ active: railTab === 'inspect' }"
-            @click="railTab = 'inspect'"
-          >
-            <v-icon icon="mdi-clipboard-check-outline" size="16" />
-            <span>檢查項目</span>
-          </button>
         </div>
 
         <div class="rail-content">
-          <CobiePanel
-            v-if="railTab === 'cobie'"
+          <CobieInspectionPanel
+            v-if="railTab === 'inspect'"
             :element="selectedElement"
             :model-id="modelId"
-            @highlight="onHighlight"
           />
           <DocumentList v-else-if="railTab === 'docs'" :element="selectedElement" :model-id="modelId" />
           <PropertyPanel v-else-if="railTab === 'props'" :element="selectedElement" />
           <CobieFilterPanel v-else-if="railTab === 'filter'" :filter="filter" />
-          <CobieInspectionPanel
-            v-else-if="railTab === 'inspect'"
-            :element="selectedElement"
-            :model-id="modelId"
-          />
         </div>
       </aside>
     </div>
