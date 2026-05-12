@@ -260,6 +260,7 @@ export function useCobieFilter(opts: {
     } else {
       v.showAll?.()
       v.isolate?.(dbIds)
+      v.fitToView?.(dbIds)
     }
   }
 

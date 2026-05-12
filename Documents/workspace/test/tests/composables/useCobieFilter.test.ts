@@ -201,15 +201,17 @@ describe('useCobieFilter — viewer isolation sync', () => {
     expect(viewer.calls).toEqual([])
   })
 
-  it('isolates hit dbIds after apply()', async () => {
+  it('isolates hit dbIds after apply() and fits view', async () => {
     filter.setPendingMode('floor')
     filter.togglePending('1F')
     filter.apply()
     await nextTick()
-    const last = viewer.calls.slice(-2)
+    const last = viewer.calls.slice(-3)
     expect(last[0]).toEqual(['showAll'])
     expect(last[1][0]).toBe('isolate')
     expect([...last[1][1]].sort()).toEqual([10, 20])
+    expect(last[2][0]).toBe('fitToView')
+    expect([...last[2][1]].sort()).toEqual([10, 20])
   })
 
   it('hideAll when applied filter produces zero hits', async () => {
