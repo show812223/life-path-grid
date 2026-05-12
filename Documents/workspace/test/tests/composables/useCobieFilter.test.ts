@@ -184,3 +184,50 @@ describe('useCobieFilter — derived hits', () => {
     expect(viewer.calls).toEqual([])
   })
 })
+
+describe('useCobieFilter — viewer isolation sync', () => {
+  let viewer: ReturnType<typeof makeMockViewer>
+  let viewerRef: ReturnType<typeof ref>
+  let filter: ReturnType<typeof useCobieFilter>
+
+  beforeEach(() => {
+    viewer = makeMockViewer()
+    viewerRef = ref(viewer as any)
+    filter = useCobieFilter({ viewer: viewerRef, injectedIndex: makeIndex() })
+  })
+
+  it('does nothing while appliedMode is null', async () => {
+    await nextTick()
+    expect(viewer.calls).toEqual([])
+  })
+
+  it('isolates hit dbIds after apply()', async () => {
+    filter.setPendingMode('floor')
+    filter.togglePending('1F')
+    filter.apply()
+    await nextTick()
+    const last = viewer.calls.slice(-2)
+    expect(last[0]).toEqual(['showAll'])
+    expect(last[1][0]).toBe('isolate')
+    expect([...last[1][1]].sort()).toEqual([10, 20])
+  })
+
+  it('hideAll when applied filter produces zero hits', async () => {
+    filter.setPendingMode('floor')
+    filter.togglePending('UNKNOWN_FLOOR')
+    filter.apply()
+    await nextTick()
+    expect(viewer.calls.at(-1)).toEqual(['hideAll'])
+  })
+
+  it('restores all on clear()', async () => {
+    filter.setPendingMode('floor')
+    filter.togglePending('1F')
+    filter.apply()
+    await nextTick()
+    viewer.calls.length = 0
+    filter.clear()
+    await nextTick()
+    expect(viewer.calls).toEqual([['showAll'], ['isolate', []]])
+  })
+})

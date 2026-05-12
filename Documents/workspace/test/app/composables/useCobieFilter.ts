@@ -157,6 +157,31 @@ export function useCobieFilter(opts: {
     }, { immediate: true })
   }
 
+  function applyIsolation() {
+    const v = opts.viewer.value
+    if (!v) return
+    if (appliedMode.value === null) {
+      v.showAll?.()
+      v.isolate?.([])
+      return
+    }
+    const idx = index.value
+    if (!idx) return
+    const dbIds: number[] = []
+    for (const extId of hitExtIds.value) {
+      const e = idx.byExtId.get(extId)
+      if (e) dbIds.push(e.dbId)
+    }
+    if (dbIds.length === 0) {
+      v.hideAll?.()
+    } else {
+      v.showAll?.()
+      v.isolate?.(dbIds)
+    }
+  }
+
+  watch([appliedMode, appliedSelected, index, opts.viewer], applyIsolation, { flush: 'post' })
+
   onScopeDispose(() => {
     const v = opts.viewer.value
     if (v) { v.showAll?.(); v.isolate?.([]) }
