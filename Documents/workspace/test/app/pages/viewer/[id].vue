@@ -130,10 +130,11 @@ const onInspectFocus = (dbId: number) => {
   v.fitToView?.([dbId])
 }
 
-const onFilterByType = (typeName: string) => {
+const onInspectFilter = (mode: 'floor' | 'space' | 'type' | 'system', values: string[]) => {
+  if (values.length === 0) return
   filter.clear()
-  filter.setPendingMode('type')
-  filter.togglePending(typeName)
+  filter.setPendingMode(mode)
+  for (const v of values) filter.togglePending(v)
   filter.apply()
   railTab.value = 'filter'
 }
@@ -443,7 +444,7 @@ const copyTreeDump = async () => {
             :element="selectedElement"
             :model-id="modelId"
             @focus="onInspectFocus"
-            @filter-type="onFilterByType"
+            @filter="onInspectFilter"
           />
           <DocumentList v-else-if="railTab === 'docs'" :element="selectedElement" :model-id="modelId" />
           <PropertyPanel v-else-if="railTab === 'props'" :element="selectedElement" />

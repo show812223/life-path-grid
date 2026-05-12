@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SelectedElement } from '~/components/ForgeViewer.client.vue'
 import { useCobieStore, type ExtractedComponent, type ExtractedType, type ExtractedSpace } from '~/composables/useCobieStore'
+import type { FilterMode } from '~/composables/useCobieFilter'
 
 const props = defineProps<{
   element: SelectedElement | null
@@ -9,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   focus: [dbId: number]
-  filterType: [typeName: string]
+  filter: [mode: Exclude<FilterMode, null>, values: string[]]
 }>()
 
 const store = useCobieStore()
@@ -50,18 +51,31 @@ watch(
 )
 
 type Row = { label: string; value: string }
-type RowAction = 'focus' | 'filter-type' | null
+type RowAction = 'focus' | { mode: Exclude<FilterMode, null>; values: string[] } | null
+
+const LABEL_TO_MODE: Record<string, Exclude<FilterMode, null>> = {
+  Type: 'type',
+  Space: 'space',
+  Floor: 'floor',
+  System: 'system'
+}
 
 const rowAction = (row: Row): RowAction => {
   if (row.label === 'Name' && props.element) return 'focus'
-  if (row.label === 'Type' && row.value && row.value !== '—') return 'filter-type'
-  return null
+  if (!row.value || row.value === '—') return null
+  const mode = LABEL_TO_MODE[row.label]
+  if (!mode) return null
+  // System may carry multiple values joined by "、"; split for filter.
+  const values = row.label === 'System'
+    ? row.value.split('、').map(s => s.trim()).filter(Boolean)
+    : [row.value]
+  return { mode, values }
 }
 
 const onRowClick = (row: Row) => {
   const action = rowAction(row)
   if (action === 'focus' && props.element) emit('focus', props.element.dbId)
-  else if (action === 'filter-type') emit('filterType', row.value)
+  else if (action && typeof action === 'object') emit('filter', action.mode, action.values)
 }
 
 const fields = computed(() => {
@@ -128,7 +142,7 @@ const fields = computed(() => {
             class="row-icon"
           />
           <v-icon
-            v-else-if="rowAction(row) === 'filter-type'"
+            v-else-if="rowAction(row) && typeof rowAction(row) === 'object'"
             icon="mdi-filter-variant"
             size="14"
             class="row-icon"
