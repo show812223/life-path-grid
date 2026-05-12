@@ -123,3 +123,64 @@ describe('useCobieFilter — state machine', () => {
     expect(filter.isDirty.value).toBe(true)
   })
 })
+
+describe('useCobieFilter — derived hits', () => {
+  let viewer: ReturnType<typeof makeMockViewer>
+  let viewerRef: ReturnType<typeof ref>
+  let filter: ReturnType<typeof useCobieFilter>
+
+  beforeEach(() => {
+    viewer = makeMockViewer()
+    viewerRef = ref(viewer as any)
+    filter = useCobieFilter({ viewer: viewerRef, injectedIndex: makeIndex() })
+  })
+
+  it('pendingOptions lists sorted values for current mode', () => {
+    filter.setPendingMode('floor')
+    expect(filter.pendingOptions.value).toEqual(['1F', '2F'])
+    filter.setPendingMode('type')
+    expect(filter.pendingOptions.value).toEqual(['Duct', 'Pipe'])
+  })
+
+  it('hitExtIds is empty when no applied filter', () => {
+    expect(filter.hitExtIds.value.size).toBe(0)
+  })
+
+  it('hitExtIds is union of selected values', () => {
+    filter.setPendingMode('floor')
+    filter.togglePending('1F')
+    filter.togglePending('2F')
+    filter.apply()
+    expect([...filter.hitExtIds.value].sort()).toEqual(['A', 'B', 'C'])
+  })
+
+  it('hitsAsList sorts by name and includes typeName', () => {
+    filter.setPendingMode('type')
+    filter.togglePending('Duct')
+    filter.apply()
+    expect(filter.hitsAsList.value).toEqual([
+      { extId: 'A', dbId: 10, name: 'Duct-A', typeName: 'Duct' },
+      { extId: 'C', dbId: 30, name: 'Duct-C', typeName: 'Duct' }
+    ])
+  })
+
+  it('canApply requires dirty + non-empty pending + non-null mode', () => {
+    expect(filter.canApply.value).toBe(false)
+    filter.setPendingMode('floor')
+    expect(filter.canApply.value).toBe(false) // empty selection
+    filter.togglePending('1F')
+    expect(filter.canApply.value).toBe(true)
+    filter.apply()
+    expect(filter.canApply.value).toBe(false) // not dirty
+  })
+
+  it('focusOne calls viewer.select + fitToView with the dbId', () => {
+    filter.focusOne('B')
+    expect(viewer.calls).toEqual([['select', [20]], ['fitToView', [20]]])
+  })
+
+  it('focusOne is a no-op for unknown extId', () => {
+    filter.focusOne('UNKNOWN')
+    expect(viewer.calls).toEqual([])
+  })
+})
