@@ -162,6 +162,52 @@ export function useCobieFilter(opts: {
     return arr
   })
 
+  // -- 重算與套用 highlight --
+  let requestId = 0
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+  const run = async () => {
+    const my = ++requestId
+    const c = ctx.value
+    const v = opts.viewer.value
+    if (!c || !v) { result.value = { active: false }; return }
+
+    const r = evaluateChain(chain.value, c)
+    if (my !== requestId) return
+
+    if (!r.active || !enabled.value) {
+      highlight.clearHighlight(v)
+      result.value = { active: false }
+      return
+    }
+
+    const emptyMode = r.finalSet.size === 0 ? 'hideAll' : 'showAll'
+    const { missing } = await highlight.applyHighlight(v, r.finalSet, { emptyMode })
+    if (my !== requestId) return
+    result.value = { ...r, missingInModel: missing }
+  }
+
+  const trigger = () => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(run, 200)
+  }
+
+  // 拆 watch：chain 需要 deep；ctx / enabled / viewer 單值
+  // ⚠️ 切忌 deep-watch viewer（Forge viewer 含 THREE.Scene 循環引用會炸）
+  watch(chain, trigger, { deep: true })
+  watch(enabled, trigger)
+  watch(ctx, trigger)
+  watch(opts.viewer, (v, oldV) => {
+    if (oldV && v !== oldV) highlight.resetForNewModel()
+    trigger()
+  }, { immediate: true })
+
+  // 生命週期：離開頁面 / HMR
+  onScopeDispose(() => {
+    if (opts.viewer.value) highlight.clearHighlight(opts.viewer.value)
+    if (debounceTimer) clearTimeout(debounceTimer)
+  })
+
   return {
     chain, ctx, availableDimensions, result, enabled,
     shouldSuppressIsolate,
