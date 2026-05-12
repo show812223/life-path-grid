@@ -90,20 +90,25 @@ export function useFilterCtx(modelId: MaybeRef<string>) {
     loading.value = true
     const id = unref(modelId)
     if (!id) { loading.value = false; return }
-    const [components, types, spaces, floors, zones, systems, attributes] = await Promise.all([
-      store.listComponents(id),
-      store.listTypes(id),
-      store.listSpaces(id),
-      store.listFloors(id),
-      store.listZones(id),
-      store.listSystems(id),
-      store.listAttributes(id)
-    ])
-    if (my !== token) return
-    ctx.value = buildFilterCtx({
-      modelId: id, components, types, spaces, floors, zones, systems, attributes
-    })
-    loading.value = false
+    try {
+      const [components, types, spaces, floors, zones, systems, attributes] = await Promise.all([
+        store.listComponents(id),
+        store.listTypes(id),
+        store.listSpaces(id),
+        store.listFloors(id),
+        store.listZones(id),
+        store.listSystems(id),
+        store.listAttributes(id)
+      ])
+      if (my !== token) return
+      ctx.value = buildFilterCtx({
+        modelId: id, components, types, spaces, floors, zones, systems, attributes
+      })
+    } catch (e) {
+      if (my === token) console.error('[useFilterCtx] reload failed:', e)
+    } finally {
+      if (my === token) loading.value = false
+    }
   }
 
   watch(() => unref(modelId), reload, { immediate: true })
