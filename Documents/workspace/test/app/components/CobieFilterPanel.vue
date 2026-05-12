@@ -6,9 +6,6 @@ import { isConditionActive } from '~/composables/filterEngine'
 
 const props = defineProps<{ filter: UseCobieFilterReturn }>()
 
-const showAddMenu = ref(false)
-const showOrMenu = ref(false)
-
 const hitCount = computed(() => {
   const r = props.filter.result.value
   return r.active ? r.finalSet.size : 0
@@ -92,35 +89,14 @@ const onCopyExtIds = async () => {
       </template>
 
       <div class="add-row">
-        <v-menu v-model="showAddMenu">
-          <template #activator="{ props: menuProps }">
-            <v-btn v-bind="menuProps" variant="tonal" size="small" prepend-icon="mdi-plus">加入條件 (AND)</v-btn>
-          </template>
-          <v-list density="compact" max-height="320">
-            <v-list-item
-              v-for="d in filter.availableDimensions"
-              :key="d.id"
-              @click="filter.addCondition(d.id); showAddMenu = false"
-            >
-              <v-list-item-title>{{ d.label }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-
-        <v-menu v-model="showOrMenu">
-          <template #activator="{ props: menuProps }">
-            <v-btn v-bind="menuProps" variant="text" size="small" prepend-icon="mdi-plus">OR 群組</v-btn>
-          </template>
-          <v-list density="compact" max-height="320">
-            <v-list-item
-              v-for="d in filter.availableDimensions"
-              :key="d.id"
-              @click="filter.addOrGroup(d.id); showOrMenu = false"
-            >
-              <v-list-item-title>{{ d.label }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <v-btn
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-plus"
+          @click="filter.addEmptyCondition()"
+        >
+          加入條件
+        </v-btn>
       </div>
     </div>
 

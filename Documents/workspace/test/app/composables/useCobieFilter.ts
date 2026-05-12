@@ -29,6 +29,7 @@ export interface UseCobieFilterReturn {
   enabled: Ref<boolean>
   shouldSuppressIsolate: ComputedRef<boolean>
   addCondition(dimensionId: string): string
+  addEmptyCondition(): string
   addOrGroup(firstDimensionId: string): string
   addConditionToGroup(groupId: string, dimensionId: string): string
   removeItem(itemId: string): void
@@ -71,6 +72,18 @@ export function useCobieFilter(opts: {
 
   const addCondition = (dimensionId: string): string => {
     const c = newCondition(dimensionId)
+    chain.value.items.push({ kind: 'single', condition: c })
+    return c.id
+  }
+
+  /** 加一個未指定 dimension 的空條件，card 內讓使用者選 */
+  const addEmptyCondition = (): string => {
+    const c: FilterCondition = {
+      id: newId(),
+      dimensionId: '',
+      op: 'in',
+      value: undefined
+    }
     chain.value.items.push({ kind: 'single', condition: c })
     return c.id
   }
@@ -212,7 +225,7 @@ export function useCobieFilter(opts: {
   return {
     chain, ctx, availableDimensions, result, enabled,
     shouldSuppressIsolate,
-    addCondition, addOrGroup, addConditionToGroup,
+    addCondition, addEmptyCondition, addOrGroup, addConditionToGroup,
     removeItem, removeConditionFromGroup, updateCondition,
     clearAll, notifyManualFocus, exportExtIds, fitToHits,
     hitsGroupedByType
