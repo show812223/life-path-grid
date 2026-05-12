@@ -246,7 +246,7 @@ const attr: FilterDimension = {
   },
   evaluate: (ctx, op, value) => {
     const { attrName, value: needle } = (value as { attrName: string; value: string }) ?? {}
-    if (!attrName) return new Set()
+    if (!attrName) return new Set<string>()
     const out = new Set<string>()
     const targetName = attrName.toLowerCase()
     const v = String(needle ?? '')
