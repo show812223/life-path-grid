@@ -76,8 +76,9 @@ type ChainItem =
 
 interface FilterChain {
   items: ChainItem[]   // items 之間 AND，群組內 OR
-  enabled: boolean
 }
+// 註：UI「套用到模型」開關不放在 FilterChain，而是 useCobieFilter 的獨立 `enabled` ref，
+//     讓 chain 保持「純資料」屬性，避免 UI 狀態汙染。
 ```
 
 ### 維度註冊表（FilterDimension）
@@ -137,8 +138,12 @@ function isConditionActive(c: FilterCondition): boolean {
 
 ### 自動展開規則（Type.Category）
 
-- 觸發條件：`shouldExpand(c) := c.dimensionId === 'type.name'`，且 `c` 位於 **chain.items[0]** 內
-- 第一個 item 若為 OR 群組，群組內**每個** type.name condition 都各自展開後再 union（仍保持 OR 語意）
+- 觸發條件函式（顯式宣告）：
+  ```ts
+  const shouldExpand = (c: FilterCondition) => c.dimensionId === 'type.name'
+  ```
+- 觸發位置：**第一個 active item 內**（不是 `chain.items[0]`，因為前面可能有 pass-through item 被跳過）
+- 第一個 active item 若為 OR 群組：實作上可優化為「群組內所有 type.name 命中先 union 再呼叫 expand 一次」（與「各自展開後 union」結果等價，因為 expand 內部已將 categories 合併處理）
 - 其他維度永不展開
 - 算法：取命中 components → 反查 `typeName` → 取出 categories → 撈所有 type 同 category → 聚合 components
 
@@ -186,6 +191,8 @@ interface FilterCtx {
   byZone: Map<string, Set<string>>       // ZoneName → component externalIds（透過 Zone.SpaceNames → Space → Component）
   bySystem: Map<string, Set<string>>     // SystemName → component externalIds（直接讀 ExtractedSystem.componentExternalIds）
   byType: Map<string, Set<string>>       // TypeName → component externalIds（從 Component.typeName 反向聚合）
+  /** 解析維度註冊表。讓 filterEngine 不需直接 import filterRegistry。 */
+  dim: (dimensionId: string) => FilterDimension
 }
 ```
 
@@ -194,6 +201,14 @@ interface FilterCtx {
 **索引構建步驟**（在 `useFilterCtx.ts` 內）：
 
 ```ts
+// 小工具
+const addToMap = <K, V>(m: Map<K, Set<V>>, k: K, v: V) => {
+  let s = m.get(k); if (!s) { s = new Set<V>(); m.set(k, s) }; s.add(v)
+}
+const pushToMap = <K, V>(m: Map<K, V[]>, k: K, v: V) => {
+  const arr = m.get(k); if (arr) arr.push(v); else m.set(k, [v])
+}
+
 // 1. byExternalId / bySpace / byType — 從 components 一次掃過
 for (const c of components) {
   byExternalId.set(c.externalId, c)
@@ -242,6 +257,10 @@ type EvaluateResult =
       emptyAtStep?: number                              // 該步出現空集合
     }
 
+/** chain item 的穩定 key（給 perStep 對應 UI） */
+const itemKey = (item: ChainItem): string =>
+  item.kind === 'single' ? item.condition.id : item.id
+
 function evaluateItem(item: ChainItem, ctx: FilterCtx, isFirst: boolean): Set<string> | null {
   if (item.kind === 'single') {
     if (!isConditionActive(item.condition)) return null
@@ -249,15 +268,23 @@ function evaluateItem(item: ChainItem, ctx: FilterCtx, isFirst: boolean): Set<st
     if (isFirst && shouldExpand(item.condition)) s = expandToSameCategory(ctx, s)
     return s
   }
-  // orGroup
+  // orGroup — 將 type.name 命中先合併再 expand 一次（優化）
   let any = false
   const acc = new Set<string>()
+  const typeNameUnion = new Set<string>()
   for (const c of item.conditions) {
     if (!isConditionActive(c)) continue
-    let s = ctx.dim(c.dimensionId).evaluate(ctx, c.op, c.value)
-    if (isFirst && shouldExpand(c)) s = expandToSameCategory(ctx, s)
-    for (const id of s) acc.add(id)
     any = true
+    const s = ctx.dim(c.dimensionId).evaluate(ctx, c.op, c.value)
+    if (isFirst && shouldExpand(c)) {
+      for (const id of s) typeNameUnion.add(id)
+    } else {
+      for (const id of s) acc.add(id)
+    }
+  }
+  if (typeNameUnion.size > 0) {
+    const expanded = expandToSameCategory(ctx, typeNameUnion)
+    for (const id of expanded) acc.add(id)
   }
   return any ? acc : null      // 群組內全部空 → 群組視為 pass-through
 }
@@ -327,8 +354,22 @@ function clearHighlight(viewer) {
 
 - 篩選 enabled 且 `result.active && finalSet.size > 0` 時：COBie tab 點選改為「select + fitToView **不** isolate」（避免推翻篩選 ghost 層）
 - 使用者若手動觸發 focus（例如點 COBie tab 的 mdi-cube-scan 按鈕） → 篩選自動 disable，toast 提示「篩選暫停 — 因手動選取了元件」
+- **手動 focus 偵測機制**：useCobieFilter 暴露 `notifyManualFocus()` 方法；`viewer/[id].vue` 內既有 `focusElements()` 結尾呼叫一次該方法即可。useCobieFilter 收到後設 `enabled = false` 並 emit toast。（用顯式呼叫而非監聽 viewer 事件，避免「自己呼叫的 isolate 也觸發自我關閉」的悖論）
 - 切 view（同 model 換 SVF view）→ mapping 自然失效、篩選結果自動重套（透過 watch 重新呼叫 applyHighlight）
 - 切離 viewer 頁 → unmount 清除 highlight
+
+### useViewerHighlight 對外介面
+
+```ts
+export interface UseViewerHighlight {
+  applyHighlight(viewer: any, externalIds: Set<string>): Promise<{ hitDbIds: number[]; missing: number }>
+  clearHighlight(viewer: any): void
+  /** 對最近一次 applyHighlight 的命中集合 fitToView。沒有命中或 viewer 未 ready 時 no-op。 */
+  fitToHighlight(viewer: any): Promise<void>
+}
+```
+
+`fitToHighlight` 內部留一份 `lastHitDbIds: number[]`，篩選器「Fit to view」按鈕直接呼叫此方法。
 
 ### 生命週期
 
@@ -346,7 +387,28 @@ function clearHighlight(viewer) {
 | externalId 在 model 中找不到 dbId | 計入 `missing`，UI 標示 |
 | viewer 尚未 ready | defer 到 `onViewerReady` |
 | 命中 > 5000 件 | 不做特殊處理；觀察實測再決定是否 batch |
-| 條件鏈執行中又有變更 | 用 `requestId` token，過期結果丟棄 |
+| 條件鏈執行中又有變更 | 用 `requestId` token，過期結果丟棄（見下） |
+
+**requestId 機制**（位於 `useCobieFilter`，不污染純函式引擎）：
+
+```ts
+let requestId = 0
+watch(chain, async () => {
+  const my = ++requestId
+  await debounceTick(200)
+  if (my !== requestId) return                 // 已被後續變更取代
+  const r = evaluateChain(chain.value, ctx)
+  if (my !== requestId) return
+  if (r.active && enabled.value) {
+    const { missing } = await applyHighlight(viewer, r.finalSet)
+    if (my !== requestId) return
+    result.value = { ...r, missingInModel: missing }
+  } else {
+    clearHighlight(viewer)
+    result.value = { active: false }
+  }
+}, { deep: true })
+```
 
 ## §4 — 檔案結構、模組邊界、測試
 
@@ -362,6 +424,7 @@ app/
 │   └── useCobieFilter.ts        [新] facade：chain state + ctx + viewer
 ├── components/
 │   ├── CobieFilterPanel.vue     [新] rail tab root
+│   ├── CobieFilterStatusBar.vue [新] rail 收起時的 thin status bar（畫布上方）
 │   ├── FilterConditionCard.vue  [新] 單條件 card
 │   ├── FilterOrGroupCard.vue    [新] OR 群組 card
 │   └── FilterValueInput.vue     [新] 依 op 渲染輸入控件
@@ -379,6 +442,7 @@ app/
 | `useViewerHighlight` | mapping cache、apply/clear | 知道 chain 結構 |
 | `useCobieFilter` | facade：串 chain ↔ ctx ↔ viewer | 直接寫 UI 樣式 |
 | `CobieFilterPanel` | UI root | 算邏輯 |
+| `CobieFilterStatusBar` | rail 收起時顯示 `篩選 N / M 件 [清除]`，只在 `enabled && result.active` 時 render | 算邏輯、操作 viewer |
 | `FilterConditionCard` / `FilterOrGroupCard` | 純呈現 | 查 store |
 | `FilterValueInput` | 依 op 切換輸入控件 | 知道 viewer |
 
@@ -416,6 +480,8 @@ viewer/[id].vue
   removeConditionFromGroup(groupId: string, conditionId: string): void,
   updateCondition(conditionId: string, patch: Partial<FilterCondition>): void,
   clearAll(): void,
+  /** 通知「使用者手動 focus 了元件」→ 自動 disable 篩選並 emit toast */
+  notifyManualFocus(): void,
   exportExtIds(): string            // 命中 externalIds 換行串接
 }
 ```
@@ -436,8 +502,10 @@ viewer/[id].vue
 **手動驗收**：
 - 案例 1：`Type.Name = "M_Return Diffuser..."` → 同 `Type.Category` 全部上色
 - 案例 2：上面加 `Floor.Name = "First Floor"` → 縮到一樓
-- 案例 3：加 OR 群組「Manufacturer = X」OR「Manufacturer = Y」→ 交集正確
-- 案例 4：清除全部 → 模型還原
+- 案例 3：加 OR 群組「Manufacturer = Trane」OR「Manufacturer = Carrier」→ 群組內為兩廠商 union；再與案例 1 的 Type 條件取交集
+- 案例 4：清除全部 → 模型還原（無 ghost、無 theming color）
+- 案例 5：手動點 COBie tab 的 mdi-cube-scan focus 一個構件 → 篩選 toggle 自動關閉、toast 出現、模型 isolate 成單一構件
+- 案例 6：rail 收起後篩選仍生效，畫布上方出現 thin status bar；按其中的「清除」可清掉篩選
 
 **E2E**：暫不寫（Forge + WebGL 成本高）
 
