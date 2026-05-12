@@ -44,7 +44,7 @@ const onSelect = (el: SelectedElement | null) => {
 
 // COBie extraction from model
 const modelId = computed(() => String(route.params.id))
-const filter = useCobieFilter({ modelId, viewer: viewerRef })
+const filter = useCobieFilter({ viewer: viewerRef })
 const store = useCobieStore()
 const extractStatus = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const extractMsg = ref('')
@@ -64,7 +64,15 @@ const runExtraction = async (viewer: any) => {
       model.value?.name,
       msg => { extractMsg.value = msg }
     )
-    await store.replaceForModel(modelId.value, result)
+    await store.mergeFromModelExtraction(modelId.value, {
+      components: result.components,
+      types: result.types,
+      spaces: result.spaces,
+      floors: result.floors,
+      systems: result.systems,
+      zones: result.zones,
+      meta: result.meta
+    })
     await refreshMeta()
     extractStatus.value = 'done'
   } catch (e: any) {
@@ -105,14 +113,6 @@ const focusElements = async (viewer: any, externalIds: string[]) => {
 
   const dbIds = await resolveDbIds(viewer, externalIds)
   if (dbIds.length === 0) return
-
-  // 篩選器啟用且有命中時，不 isolate（保留 ghost 層），只 select + fitToView
-  if (filter.shouldSuppressIsolate.value) {
-    viewer.select(dbIds)
-    viewer.fitToView(dbIds)
-    if (dbIds.length === 1) populateSelectedFromDbId(viewer, dbIds[0])
-    return
-  }
 
   viewer.isolate(dbIds)
   viewer.select(dbIds)
@@ -164,6 +164,22 @@ const reExtract = async () => {
   if (v) await runExtraction(v)
 }
 
+const clearConfirmOpen = ref(false)
+const clearing = ref(false)
+const clearCobie = async () => {
+  clearing.value = true
+  try {
+    await store.clearModel(modelId.value)
+    filter.clear()
+    await refreshMeta()
+    extractStatus.value = 'idle'
+    extractMsg.value = ''
+  } finally {
+    clearing.value = false
+    clearConfirmOpen.value = false
+  }
+}
+
 const onHighlight = async (externalIds: string[]) => {
   const v = (window as any).__viewer
   if (v && externalIds.length > 0) await focusElements(v, externalIds)
@@ -181,6 +197,64 @@ const runDiagnostic = async () => {
 
 const docCount = ref(0)
 // Doc count placeholder; documents tab is empty until separate ingestion is added.
+
+// ── Tree probe: dump model instance tree + selected-element ancestor chains ──
+const treeDumpOpen = ref(false)
+const treeDumpText = ref('')
+
+const runTreeProbe = () => {
+  const v = (window as any).__viewer
+  if (!v?.model) { treeDumpText.value = 'viewer/model 尚未準備'; treeDumpOpen.value = true; return }
+  const it = v.model.getInstanceTree()
+  if (!it) { treeDumpText.value = 'instance tree 尚未準備'; treeDumpOpen.value = true; return }
+
+  const lines: string[] = []
+
+  // 1. 前 3 層樹狀結構
+  lines.push('=== model tree (depth ≤ 3) ===')
+  const dump = (id: number, depth: number, maxDepth: number) => {
+    const name = it.getNodeName(id)
+    const children: number[] = []
+    it.enumNodeChildren(id, (c: number) => children.push(c))
+    lines.push(`${'  '.repeat(depth)}${id}: ${name}  (${children.length} children)`)
+    if (depth < maxDepth) for (const c of children) dump(c, depth + 1, maxDepth)
+  }
+  dump(it.getRootId(), 0, 3)
+
+  // 2. 目前 selection 或 isolation 的 ancestor 鏈
+  let dbIds: number[] = v.getSelection?.() || []
+  let source = 'selection'
+  if (dbIds.length === 0) {
+    try { dbIds = v.getIsolatedNodes?.() || [] } catch {}
+    source = 'isolation'
+  }
+  lines.push('')
+  lines.push(`=== ancestor chains (from ${source}, ${dbIds.length} dbIds) ===`)
+  if (dbIds.length === 0) {
+    lines.push('(無 — 請先在 3D 點一個變色元件再按)')
+  } else {
+    for (const id of dbIds.slice(0, 10)) {
+      const chain: string[] = []
+      let cur: number | null = id
+      while (cur) {
+        chain.push(`${cur}: ${it.getNodeName(cur)}`)
+        const p = it.getNodeParentId(cur)
+        cur = p ? p : null
+      }
+      lines.push(`--- ${id} ---`)
+      lines.push('  └ ' + chain.reverse().join('\n  └ '))
+    }
+    if (dbIds.length > 10) lines.push(`... (剩 ${dbIds.length - 10} 個略過)`)
+  }
+
+  treeDumpText.value = lines.join('\n')
+  treeDumpOpen.value = true
+  console.log(treeDumpText.value)
+}
+
+const copyTreeDump = async () => {
+  try { await navigator.clipboard.writeText(treeDumpText.value) } catch {}
+}
 </script>
 
 <template>
@@ -259,11 +333,24 @@ const docCount = ref(0)
               title="COBie 屬性診斷"
               @click="runDiagnostic"
             />
+            <v-list-item
+              prepend-icon="mdi-file-tree-outline"
+              title="Model Tree 探測"
+              @click="runTreeProbe"
+            />
             <v-divider />
             <v-list-item
               prepend-icon="mdi-file-table-outline"
               title="匯入 / 比對 XLSX"
               to="/cobie"
+            />
+            <v-divider />
+            <v-list-item
+              prepend-icon="mdi-database-remove-outline"
+              title="清除 COBie 資料"
+              base-color="error"
+              :disabled="!extractMeta"
+              @click="clearConfirmOpen = true"
             />
           </v-list>
         </v-menu>
@@ -352,6 +439,21 @@ const docCount = ref(0)
       </aside>
     </div>
 
+    <!-- Tree probe dialog -->
+    <v-dialog v-model="treeDumpOpen" max-width="800">
+      <v-card>
+        <v-toolbar density="compact" flat>
+          <v-icon icon="mdi-file-tree-outline" class="mx-3" />
+          <v-toolbar-title>Model Tree 探測</v-toolbar-title>
+          <v-spacer />
+          <v-btn prepend-icon="mdi-content-copy" variant="text" size="small" @click="copyTreeDump">複製</v-btn>
+          <v-btn icon="mdi-close" variant="text" @click="treeDumpOpen = false" />
+        </v-toolbar>
+        <v-divider />
+        <pre class="tree-dump">{{ treeDumpText }}</pre>
+      </v-card>
+    </v-dialog>
+
     <!-- COBie diagnostic dialog -->
     <v-dialog v-model="diagnosticOpen" max-width="720">
       <v-card>
@@ -398,6 +500,27 @@ const docCount = ref(0)
             </template>
           </v-data-table>
         </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Clear COBie confirmation -->
+    <v-dialog v-model="clearConfirmOpen" max-width="420" :persistent="clearing">
+      <v-card>
+        <v-card-title class="d-flex align-center" style="gap: 8px;">
+          <v-icon icon="mdi-alert-outline" color="error" />
+          清除 COBie 資料
+        </v-card-title>
+        <v-card-text>
+          將刪除此模型已抽取/匯入的所有 COBie 資料（元件、類型、空間、樓層、系統、區域、設施、文件、聯絡人、屬性、表單列）。此操作無法復原。
+          <div v-if="extractMeta" class="text-caption mt-2" style="color: var(--text-muted);">
+            目前資料：{{ extractMeta.componentCount }} 件 · 來源 {{ extractMeta.source === 'xlsx' ? 'XLSX 匯入' : '模型抽取' }}
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="clearing" @click="clearConfirmOpen = false">取消</v-btn>
+          <v-btn color="error" variant="flat" :loading="clearing" @click="clearCobie">清除</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
@@ -489,6 +612,18 @@ const docCount = ref(0)
 .diag-stat-num { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 2px; }
 .diag-key { font-size: 12px; color: var(--text); }
 .diag-sample { font-size: 11px; color: var(--text-muted); }
+
+.tree-dump {
+  max-height: 70vh;
+  overflow: auto;
+  padding: 12px 16px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+  background: var(--surface-2);
+}
 
 .viewer-body {
   flex: 1;
