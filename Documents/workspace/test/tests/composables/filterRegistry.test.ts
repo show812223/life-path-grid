@@ -74,3 +74,36 @@ describe('getDim', () => {
     expect(() => getDim('nope')).toThrow(/Unknown dimension/)
   })
 })
+
+const sampleComponents = () => {
+  const comps = [
+    { modelId: 'M', externalId: 'e1', dbId: 0, name: 'AHU-01', typeName: 'T1', tagNumber: 'TAG-01', serialNumber: 'SN-01', assetIdentifier: 'A001', barCode: 'BC1', area: 12, length: 100, installationDate: '2020-01-01', warrantyStartDate: '2020-02-01' },
+    { modelId: 'M', externalId: 'e2', dbId: 0, name: 'AHU-02', typeName: 'T1', tagNumber: 'TAG-02', area: 25, length: 200, installationDate: '2021-06-01' },
+    { modelId: 'M', externalId: 'e3', dbId: 0, name: 'VAV-01', typeName: 'T2', area: 5 }
+  ] as any
+  return makeCtx({
+    components: comps,
+    byExternalId: new Map(comps.map((c: any) => [c.externalId, c]))
+  })
+}
+
+describe('REGISTRY component dimensions', () => {
+  it('component.name contains', () => {
+    const ctx = sampleComponents()
+    expect([...REGISTRY['component.name'].evaluate(ctx, 'contains', 'AHU')].sort()).toEqual(['e1', 'e2'])
+  })
+  it('component.tagNumber eq', () => {
+    const ctx = sampleComponents()
+    expect([...REGISTRY['component.tagNumber'].evaluate(ctx, 'eq', 'TAG-01')]).toEqual(['e1'])
+  })
+  it('component.area range', () => {
+    const ctx = sampleComponents()
+    expect([...REGISTRY['component.area'].evaluate(ctx, 'range', { min: 10, max: 20 })]).toEqual(['e1'])
+    expect([...REGISTRY['component.area'].evaluate(ctx, 'range', { min: 10 })].sort()).toEqual(['e1', 'e2'])
+    expect([...REGISTRY['component.area'].evaluate(ctx, 'range', { max: 10 })]).toEqual(['e3'])
+  })
+  it('component.installationDate dateRange', () => {
+    const ctx = sampleComponents()
+    expect([...REGISTRY['component.installationDate'].evaluate(ctx, 'dateRange', { from: '2020-06-01' })]).toEqual(['e2'])
+  })
+})
