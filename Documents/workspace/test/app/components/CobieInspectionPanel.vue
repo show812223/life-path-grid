@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   focus: [dbId: number]
+  filterType: [typeName: string]
 }>()
 
 const store = useCobieStore()
@@ -47,6 +48,21 @@ watch(
   reload,
   { immediate: true }
 )
+
+type Row = { label: string; value: string }
+type RowAction = 'focus' | 'filter-type' | null
+
+const rowAction = (row: Row): RowAction => {
+  if (row.label === 'Name' && props.element) return 'focus'
+  if (row.label === 'Type' && row.value && row.value !== '—') return 'filter-type'
+  return null
+}
+
+const onRowClick = (row: Row) => {
+  const action = rowAction(row)
+  if (action === 'focus' && props.element) emit('focus', props.element.dbId)
+  else if (action === 'filter-type') emit('filterType', row.value)
+}
 
 const fields = computed(() => {
   const c = component.value
@@ -99,15 +115,21 @@ const fields = computed(() => {
         v-for="row in fields"
         :key="row.label"
         class="row"
-        :class="{ clickable: row.label === 'Name' && element }"
-        @click="row.label === 'Name' && element ? emit('focus', element.dbId) : undefined"
+        :class="{ clickable: rowAction(row) !== null }"
+        @click="onRowClick(row)"
       >
         <div class="row-label">{{ row.label }}</div>
         <div class="row-value">
           {{ row.value }}
           <v-icon
-            v-if="row.label === 'Name' && element"
+            v-if="rowAction(row) === 'focus'"
             icon="mdi-crosshairs-gps"
+            size="14"
+            class="row-icon"
+          />
+          <v-icon
+            v-else-if="rowAction(row) === 'filter-type'"
+            icon="mdi-filter-variant"
             size="14"
             class="row-icon"
           />
