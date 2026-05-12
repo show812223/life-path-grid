@@ -32,7 +32,7 @@ const showExpandHint = computed(() =>
         @update:model-value="(op) => emit('update', { op, value: undefined })"
       />
       <v-spacer />
-      <v-btn icon="mdi-close" variant="text" size="x-small" @click="emit('remove')" />
+      <v-btn icon="mdi-close" variant="text" size="x-small" aria-label="移除條件" @click="emit('remove')" />
     </div>
     <FilterValueInput
       :condition="condition"

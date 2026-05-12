@@ -45,7 +45,7 @@ const onCopyExtIds = async () => {
       <h3 class="filter-title">篩選器</h3>
       <v-spacer />
       <span class="filter-badge t-mono">{{ hitCount }} / {{ totalCount }}</span>
-      <v-btn icon="mdi-broom" variant="text" size="small" title="清除全部" @click="filter.clearAll()" />
+      <v-btn icon="mdi-broom" variant="text" size="small" title="清除全部" aria-label="清除全部" @click="filter.clearAll()" />
     </header>
 
     <v-divider />
@@ -93,8 +93,8 @@ const onCopyExtIds = async () => {
 
       <div class="add-row">
         <v-menu v-model="showAddMenu">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" variant="tonal" size="small" prepend-icon="mdi-plus">加入條件 (AND)</v-btn>
+          <template #activator="{ props: menuProps }">
+            <v-btn v-bind="menuProps" variant="tonal" size="small" prepend-icon="mdi-plus">加入條件 (AND)</v-btn>
           </template>
           <v-list density="compact" max-height="320">
             <v-list-item
@@ -108,8 +108,8 @@ const onCopyExtIds = async () => {
         </v-menu>
 
         <v-menu v-model="showOrMenu">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" variant="text" size="small" prepend-icon="mdi-plus">OR 群組</v-btn>
+          <template #activator="{ props: menuProps }">
+            <v-btn v-bind="menuProps" variant="text" size="small" prepend-icon="mdi-plus">OR 群組</v-btn>
           </template>
           <v-list density="compact" max-height="320">
             <v-list-item

@@ -35,8 +35,8 @@ const showAddMenu = ref(false)
       />
 
       <v-menu v-model="showAddMenu">
-        <template #activator="{ props }">
-          <v-btn v-bind="props" variant="text" size="small" prepend-icon="mdi-plus" class="or-add">
+        <template #activator="{ props: menuProps }">
+          <v-btn v-bind="menuProps" variant="text" size="small" prepend-icon="mdi-plus" class="or-add">
             加入 OR 條件
           </v-btn>
         </template>
@@ -52,7 +52,7 @@ const showAddMenu = ref(false)
         </v-list>
       </v-menu>
     </div>
-    <v-btn icon="mdi-close" variant="text" size="x-small" class="or-remove" @click="emit('remove-group')" />
+    <v-btn icon="mdi-close" variant="text" size="x-small" class="or-remove" aria-label="移除 OR 群組" @click="emit('remove-group')" />
   </div>
 </template>
 
