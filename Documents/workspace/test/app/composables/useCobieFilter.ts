@@ -8,6 +8,7 @@ import { REGISTRY, getDim } from './filterRegistry'
 import { evaluateChain } from './filterEngine'
 import { useFilterCtx } from './useFilterCtx'
 import { useViewerHighlight } from './useViewerHighlight'
+import type { ExtractedComponent } from './useCobieStore'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -40,7 +41,7 @@ export interface UseCobieFilterReturn {
   hitsGroupedByType: ComputedRef<Array<{
     typeName: string
     typeCategory?: string
-    components: any[]
+    components: ExtractedComponent[]
   }>>
 }
 
@@ -143,7 +144,7 @@ export function useCobieFilter(opts: {
   const hitsGroupedByType = computed(() => {
     const r = result.value
     if (!r.active || !ctx.value) return []
-    const groups = new Map<string, { typeName: string; typeCategory?: string; components: any[] }>()
+    const groups = new Map<string, { typeName: string; typeCategory?: string; components: ExtractedComponent[] }>()
     for (const extId of r.finalSet) {
       const c = ctx.value.byExternalId.get(extId)
       if (!c) continue
