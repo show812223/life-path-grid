@@ -11,18 +11,14 @@ const MODE_LABELS: Record<Exclude<FilterMode, null>, string> = {
 }
 const MODES: Array<Exclude<FilterMode, null>> = ['floor', 'space', 'type', 'system']
 
-const search = ref('')
-
-watch(
-  () => props.filter.pendingMode.value,
-  () => { search.value = '' }
-)
-
-const filteredOptions = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  const opts = props.filter.pendingOptions.value
-  if (!q) return opts
-  return opts.filter(o => o.toLowerCase().includes(q))
+const selectedAsArray = computed<string[]>({
+  get: () => [...props.filter.pendingSelected.value],
+  set: (vals) => {
+    const next = new Set(vals)
+    const cur = props.filter.pendingSelected.value
+    for (const v of next) if (!cur.has(v)) props.filter.togglePending(v)
+    for (const v of cur) if (!next.has(v)) props.filter.togglePending(v)
+  }
 })
 
 const onChipClick = (m: Exclude<FilterMode, null>) => {
@@ -74,6 +70,23 @@ const showEmptyMode = computed(() =>
       </div>
 
       <div v-if="filter.pendingMode.value" class="options-section">
+        <div v-if="showEmptyMode" class="empty-mode">
+          無 {{ MODE_LABELS[filter.pendingMode.value!] }} 資料
+        </div>
+        <v-autocomplete
+          v-else
+          v-model="selectedAsArray"
+          :items="filter.pendingOptions.value"
+          :label="`選擇${MODE_LABELS[filter.pendingMode.value!]}`"
+          multiple
+          chips
+          closable-chips
+          clearable
+          density="compact"
+          variant="outlined"
+          hide-details
+          :menu-props="{ maxHeight: 320 }"
+        />
         <div class="options-head">
           <v-btn
             size="x-small"
@@ -87,31 +100,6 @@ const showEmptyMode = computed(() =>
             :disabled="filter.pendingSelected.value.size === 0"
             @click="filter.clearPendingSelection()"
           >清空</v-btn>
-        </div>
-        <v-text-field
-          v-model="search"
-          density="compact"
-          variant="outlined"
-          placeholder="搜尋…"
-          hide-details
-          clearable
-          prepend-inner-icon="mdi-magnify"
-          class="options-search"
-        />
-        <div v-if="showEmptyMode" class="empty-mode">
-          無 {{ MODE_LABELS[filter.pendingMode.value!] }} 資料
-        </div>
-        <div v-else class="options-list">
-          <v-checkbox
-            v-for="opt in filteredOptions"
-            :key="opt"
-            :model-value="filter.pendingSelected.value.has(opt)"
-            :label="opt"
-            density="compact"
-            hide-details
-            color="primary"
-            @update:model-value="filter.togglePending(opt)"
-          />
         </div>
       </div>
 
@@ -176,21 +164,8 @@ const showEmptyMode = computed(() =>
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 8px;
-  flex: 1;
-  min-height: 0;
 }
 .options-head { display: flex; gap: 4px; }
-.options-search :deep(input) { font-size: 12px; }
-.options-list {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid var(--border, rgba(0,0,0,0.08));
-  border-radius: 4px;
-  padding: 4px 8px;
-  max-height: 260px;
-}
-.options-list :deep(.v-selection-control) { min-height: 24px; }
-.options-list :deep(.v-label) { font-size: 12px; }
 .empty-mode { padding: 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
 .apply-row {
   display: flex;

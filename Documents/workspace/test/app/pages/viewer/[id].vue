@@ -44,7 +44,7 @@ const onSelect = (el: SelectedElement | null) => {
 
 // COBie extraction from model
 const modelId = computed(() => String(route.params.id))
-const filter = useCobieFilter({ viewer: viewerRef })
+const filter = useCobieFilter({ viewer: viewerRef, modelId })
 const store = useCobieStore()
 const extractStatus = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const extractMsg = ref('')
@@ -74,6 +74,7 @@ const runExtraction = async (viewer: any) => {
       meta: result.meta
     })
     await refreshMeta()
+    await filter.refreshFromStore()
     extractStatus.value = 'done'
   } catch (e: any) {
     extractMsg.value = e?.message ?? String(e)

@@ -60,10 +60,30 @@ const enumAllDbIds = (tree: any): number[] => {
   return ids
 }
 
+const waitForObjectTree = (model: any): Promise<any> =>
+  new Promise((resolve, reject) => {
+    if (typeof model.getObjectTree === 'function') {
+      model.getObjectTree(
+        (tree: any) => resolve(tree),
+        (err: any) => reject(err)
+      )
+    } else {
+      // Test mocks expose getInstanceTree() synchronously.
+      const tree = model.getInstanceTree?.()
+      if (tree) resolve(tree)
+      else reject(new Error('no instance tree'))
+    }
+  })
+
 export async function scanModel(model: any): Promise<CobieIndex> {
   const idx = emptyIndex()
   if (!model) return idx
-  const tree = model.getInstanceTree?.()
+  let tree: any
+  try {
+    tree = await waitForObjectTree(model)
+  } catch {
+    return idx
+  }
   if (!tree) return idx
   const dbIds = enumAllDbIds(tree)
   if (dbIds.length === 0) return idx
@@ -71,11 +91,29 @@ export async function scanModel(model: any): Promise<CobieIndex> {
   const results: any[] = await new Promise((resolve, reject) => {
     model.getBulkProperties2(
       dbIds,
-      { propFilter: [...Object.values(FIELD_TO_DISPLAY), 'externalId'] },
+      {},
       (res: any[]) => resolve(res),
       (err: any) => reject(err)
     )
   })
+
+  // Debug: dump unique COBie displayName seen so we can align to actual model schema
+  const seenDisplayNames = new Map<string, { count: number; sample: any }>()
+  for (const r of results) {
+    if (!r?.properties) continue
+    for (const p of r.properties) {
+      if (typeof p.displayName !== 'string') continue
+      if (!p.displayName.startsWith('COBie')) continue
+      const entry = seenDisplayNames.get(p.displayName)
+      if (entry) entry.count++
+      else seenDisplayNames.set(p.displayName, { count: 1, sample: p.displayValue })
+    }
+  }
+  console.log('[useModelCobieIndex] COBie displayNames in model:',
+    [...seenDisplayNames.entries()]
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([k, v]) => `${k} (${v.count}, e.g. "${v.sample}")`)
+  )
 
   for (const r of results) {
     const extId: string | undefined = r?.externalId
@@ -131,6 +169,13 @@ export function useModelCobieIndex(): UseModelCobieIndex {
       const idx = await scanModel(model)
       modelCache.set(model, idx)
       index.value = idx
+      console.log('[useModelCobieIndex] built', {
+        total: idx.byExtId.size,
+        floors: idx.byFloor.size,
+        spaces: idx.bySpace.size,
+        types: idx.byType.size,
+        systems: idx.bySystem.size
+      })
     } catch (e) {
       console.error('[useModelCobieIndex] scan failed:', e)
       index.value = null
