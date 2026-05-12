@@ -1,7 +1,9 @@
 import type {
   ChainItem,
   FilterCondition,
-  FilterCtx
+  FilterCtx,
+  FilterChain,
+  EvaluateResult
 } from './filterTypes'
 
 export const itemKey = (item: ChainItem): string =>
@@ -74,4 +76,21 @@ export function evaluateItem(
     for (const id of expanded) acc.add(id)
   }
   return any ? acc : null
+}
+
+export function evaluateChain(chain: FilterChain, ctx: FilterCtx): EvaluateResult {
+  let acc: Set<string> | null = null
+  const perStep: Array<{ itemId: string; count: number }> = []
+  let isFirstApplied = true
+  let emptyAtStep: number | undefined
+  for (const [i, item] of chain.items.entries()) {
+    const s = evaluateItem(item, ctx, isFirstApplied)
+    if (s === null) continue
+    isFirstApplied = false
+    acc = acc === null ? s : intersect(acc, s)
+    perStep.push({ itemId: itemKey(item), count: acc.size })
+    if (acc.size === 0) { emptyAtStep = i; break }
+  }
+  if (acc === null) return { active: false }
+  return { active: true, perStep, finalSet: acc, emptyAtStep }
 }
