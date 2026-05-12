@@ -44,6 +44,7 @@ const onSelect = (el: SelectedElement | null) => {
 
 // COBie extraction from model
 const modelId = computed(() => String(route.params.id))
+const filter = useCobieFilter({ modelId, viewer: viewerRef })
 const store = useCobieStore()
 const extractStatus = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const extractMsg = ref('')
@@ -74,64 +75,50 @@ const runExtraction = async (viewer: any) => {
 
 const isolationActive = ref(false)
 
-const focusElements = async (viewer: any, externalIds: string[]) => {
-  // 篩選器啟用且有命中時，不 isolate（保留 ghost 層），只 select + fitToView
-  if (filter.shouldSuppressIsolate.value) {
-    const mapping: Record<string, number> = await new Promise(resolve => {
-      viewer.model.getExternalIdMapping(
-        (m: Record<string, number>) => resolve(m),
-        () => resolve({})
-      )
-    })
-    const dbIds = externalIds.map(extId => mapping[extId]).filter((id): id is number => typeof id === 'number')
-    if (dbIds.length === 0) return
-    viewer.select(dbIds)
-    viewer.fitToView(dbIds)
-    if (dbIds.length === 1) {
-      viewer.getProperties(dbIds[0], (result: any) => {
-        selectedElement.value = {
-          dbId: dbIds[0],
-          externalId: result.externalId,
-          name: result.name,
-          properties: (result.properties ?? []).filter((p: any) => !p.hidden && p.displayValue !== '')
-        }
-      })
-    }
-    return
-  }
-
-  const model = viewer.model
-  if (!model || externalIds.length === 0) return
-
+const resolveDbIds = async (viewer: any, externalIds: string[]): Promise<number[]> => {
+  if (externalIds.length === 0) return []
   const mapping: Record<string, number> = await new Promise(resolve => {
-    model.getExternalIdMapping(
+    viewer.model.getExternalIdMapping(
       (m: Record<string, number>) => resolve(m),
       () => resolve({})
     )
   })
-
-  const dbIds = externalIds
+  return externalIds
     .map(extId => mapping[extId])
     .filter((id): id is number => typeof id === 'number')
+}
 
+const populateSelectedFromDbId = (viewer: any, dbId: number) => {
+  viewer.getProperties(dbId, (result: any) => {
+    selectedElement.value = {
+      dbId,
+      externalId: result.externalId,
+      name: result.name,
+      properties: (result.properties ?? []).filter((p: any) => !p.hidden && p.displayValue !== '')
+    }
+  })
+}
+
+const focusElements = async (viewer: any, externalIds: string[]) => {
+  const viewerModel = viewer.model
+  if (!viewerModel) return
+
+  const dbIds = await resolveDbIds(viewer, externalIds)
   if (dbIds.length === 0) return
+
+  // 篩選器啟用且有命中時，不 isolate（保留 ghost 層），只 select + fitToView
+  if (filter.shouldSuppressIsolate.value) {
+    viewer.select(dbIds)
+    viewer.fitToView(dbIds)
+    if (dbIds.length === 1) populateSelectedFromDbId(viewer, dbIds[0])
+    return
+  }
 
   viewer.isolate(dbIds)
   viewer.select(dbIds)
   viewer.fitToView(dbIds)
   isolationActive.value = true
-
-  // populate right rail with first match
-  if (dbIds.length === 1) {
-    viewer.getProperties(dbIds[0], (result: any) => {
-      selectedElement.value = {
-        dbId: dbIds[0],
-        externalId: result.externalId,
-        name: result.name,
-        properties: (result.properties ?? []).filter((p: any) => !p.hidden && p.displayValue !== '')
-      }
-    })
-  }
+  if (dbIds.length === 1) populateSelectedFromDbId(viewer, dbIds[0])
 }
 
 const clearIsolation = () => {
@@ -194,8 +181,6 @@ const runDiagnostic = async () => {
 
 const docCount = ref(0)
 // Doc count placeholder; documents tab is empty until separate ingestion is added.
-
-const filter = useCobieFilter({ modelId, viewer: viewerRef })
 </script>
 
 <template>
