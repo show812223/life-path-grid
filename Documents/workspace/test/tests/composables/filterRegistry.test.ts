@@ -147,3 +147,46 @@ describe('REGISTRY space / floor / zone / system', () => {
     expect([...REGISTRY['system.category'].evaluate(ctx, 'eq', 'Air')].sort()).toEqual(['e2', 'e3'])
   })
 })
+
+describe('REGISTRY attr', () => {
+  const sampleAttr = () => {
+    const comps = [
+      { modelId: 'M', externalId: 'e1', dbId: 0, name: 'AHU-01', typeName: 'T1' },
+      { modelId: 'M', externalId: 'e2', dbId: 0, name: 'AHU-02', typeName: 'T1' },
+      { modelId: 'M', externalId: 'e3', dbId: 0, name: 'VAV-01', typeName: 'T2', space: 'Room-A' }
+    ] as any
+    const byType = new Map([['T1', new Set(['e1', 'e2'])], ['T2', new Set(['e3'])]])
+    const bySpace = new Map([['Room-A', new Set(['e3'])]])
+    const attributesIndex = new Map<string, any[]>([
+      ['type::t1', [{ modelId: 'M', name: 'PaintColor', value: 'White', sheetName: 'Type', rowName: 'T1' }]],
+      ['component::ahu-02', [{ modelId: 'M', name: 'PaintColor', value: 'Blue', sheetName: 'Component', rowName: 'AHU-02' }]],
+      ['space::room-a', [{ modelId: 'M', name: 'PaintColor', value: 'Green', sheetName: 'Space', rowName: 'Room-A' }]]
+    ])
+    return makeCtx({
+      components: comps,
+      byExternalId: new Map(comps.map((c: any) => [c.externalId, c])),
+      byType, bySpace, attributesIndex
+    })
+  }
+
+  it('attr eq matches Type-level attribute and spreads to all components of that type', () => {
+    const ctx = sampleAttr()
+    const r = REGISTRY.attr.evaluate(ctx, 'eq', { attrName: 'PaintColor', value: 'White' })
+    expect([...r].sort()).toEqual(['e1', 'e2'])
+  })
+  it('attr eq matches Component-level attribute', () => {
+    const ctx = sampleAttr()
+    const r = REGISTRY.attr.evaluate(ctx, 'eq', { attrName: 'PaintColor', value: 'Blue' })
+    expect([...r]).toEqual(['e2'])
+  })
+  it('attr eq matches Space-level attribute', () => {
+    const ctx = sampleAttr()
+    const r = REGISTRY.attr.evaluate(ctx, 'eq', { attrName: 'PaintColor', value: 'Green' })
+    expect([...r]).toEqual(['e3'])
+  })
+  it('attr contains is case-insensitive substring on value', () => {
+    const ctx = sampleAttr()
+    const r = REGISTRY.attr.evaluate(ctx, 'contains', { attrName: 'PaintColor', value: 'whi' })
+    expect([...r].sort()).toEqual(['e1', 'e2'])
+  })
+})

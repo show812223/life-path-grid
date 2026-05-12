@@ -232,6 +232,50 @@ const systemCategory: FilterDimension = {
   }
 }
 
+const attr: FilterDimension = {
+  id: 'attr',
+  label: 'Attribute',
+  group: 'Attribute',
+  ops: ['eq', 'contains'],
+  loadOptions: (ctx) => {
+    const set = new Set<string>()
+    for (const list of ctx.attributesIndex.values()) {
+      for (const a of list) if (a.name) set.add(a.name)
+    }
+    return [...set].sort()
+  },
+  evaluate: (ctx, op, value) => {
+    const { attrName, value: needle } = (value as { attrName: string; value: string }) ?? {}
+    if (!attrName) return new Set()
+    const out = new Set<string>()
+    const targetName = attrName.toLowerCase()
+    const v = String(needle ?? '')
+    for (const [key, list] of ctx.attributesIndex) {
+      for (const a of list) {
+        if (!a.name || a.name.toLowerCase() !== targetName) continue
+        const av = a.value ?? ''
+        const match = op === 'eq' ? av === v : includesCI(av, v)
+        if (!match) continue
+        const [sheet, rowName] = key.split('::')
+        if (sheet === 'component') {
+          for (const c of ctx.components) {
+            if (c.name && c.name.toLowerCase() === rowName) out.add(c.externalId)
+          }
+        } else if (sheet === 'type') {
+          for (const [tn, ids] of ctx.byType) {
+            if (tn.toLowerCase() === rowName) for (const id of ids) out.add(id)
+          }
+        } else if (sheet === 'space') {
+          for (const [sn, ids] of ctx.bySpace) {
+            if (sn.toLowerCase() === rowName) for (const id of ids) out.add(id)
+          }
+        }
+      }
+    }
+    return out
+  }
+}
+
 export const REGISTRY: Record<string, FilterDimension> = {
   'type.name': typeName,
   'type.category': typeCategory,
@@ -253,7 +297,8 @@ export const REGISTRY: Record<string, FilterDimension> = {
   'zone.name': zoneName,
   'zone.category': zoneCategory,
   'system.name': systemName,
-  'system.category': systemCategory
+  'system.category': systemCategory,
+  'attr': attr
 }
 
 export const getDim = (id: string): FilterDimension => {
