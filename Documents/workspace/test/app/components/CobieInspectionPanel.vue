@@ -7,6 +7,10 @@ const props = defineProps<{
   modelId: string
 }>()
 
+const emit = defineEmits<{
+  focus: [dbId: number]
+}>()
+
 const store = useCobieStore()
 
 const component = ref<ExtractedComponent | undefined>()
@@ -91,9 +95,23 @@ const fields = computed(() => {
     </div>
 
     <div v-else class="rows">
-      <div v-for="row in fields" :key="row.label" class="row">
+      <div
+        v-for="row in fields"
+        :key="row.label"
+        class="row"
+        :class="{ clickable: row.label === 'Name' && element }"
+        @click="row.label === 'Name' && element ? emit('focus', element.dbId) : undefined"
+      >
         <div class="row-label">{{ row.label }}</div>
-        <div class="row-value">{{ row.value }}</div>
+        <div class="row-value">
+          {{ row.value }}
+          <v-icon
+            v-if="row.label === 'Name' && element"
+            icon="mdi-crosshairs-gps"
+            size="14"
+            class="row-icon"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -143,5 +161,12 @@ const fields = computed(() => {
 .row-value {
   flex: 1;
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.row.clickable { cursor: pointer; }
+.row.clickable:hover { background: var(--surface-2); }
+.row.clickable .row-value { color: var(--primary); }
+.row-icon { opacity: 0.7; }
 </style>

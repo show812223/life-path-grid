@@ -123,6 +123,13 @@ const focusElements = async (viewer: any, externalIds: string[]) => {
   if (dbIds.length === 1) populateSelectedFromDbId(viewer, dbIds[0])
 }
 
+const onInspectFocus = (dbId: number) => {
+  const v = (window as any).__viewer
+  if (!v) return
+  v.select?.([dbId])
+  v.fitToView?.([dbId])
+}
+
 const clearIsolation = () => {
   const v = (window as any).__viewer
   if (!v) return
@@ -427,6 +434,7 @@ const copyTreeDump = async () => {
             v-if="railTab === 'inspect'"
             :element="selectedElement"
             :model-id="modelId"
+            @focus="onInspectFocus"
           />
           <DocumentList v-else-if="railTab === 'docs'" :element="selectedElement" :model-id="modelId" />
           <PropertyPanel v-else-if="railTab === 'props'" :element="selectedElement" />
