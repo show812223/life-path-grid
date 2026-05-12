@@ -44,3 +44,34 @@ export function expandToSameCategory(
   }
   return result
 }
+
+export function evaluateItem(
+  item: ChainItem,
+  ctx: FilterCtx,
+  isFirst: boolean
+): Set<string> | null {
+  if (item.kind === 'single') {
+    if (!isConditionActive(item.condition)) return null
+    let s = ctx.dim(item.condition.dimensionId).evaluate(ctx, item.condition.op, item.condition.value)
+    if (isFirst && shouldExpand(item.condition)) s = expandToSameCategory(ctx, s)
+    return s
+  }
+  let any = false
+  const acc = new Set<string>()
+  const typeNameUnion = new Set<string>()
+  for (const c of item.conditions) {
+    if (!isConditionActive(c)) continue
+    any = true
+    const s = ctx.dim(c.dimensionId).evaluate(ctx, c.op, c.value)
+    if (isFirst && shouldExpand(c)) {
+      for (const id of s) typeNameUnion.add(id)
+    } else {
+      for (const id of s) acc.add(id)
+    }
+  }
+  if (typeNameUnion.size > 0) {
+    const expanded = expandToSameCategory(ctx, typeNameUnion)
+    for (const id of expanded) acc.add(id)
+  }
+  return any ? acc : null
+}

@@ -105,3 +105,81 @@ describe('expandToSameCategory', () => {
     expect([...expandToSameCategory(ctx, new Set(['e1']))].sort()).toEqual(['e1', 'e2'])
   })
 })
+
+import { evaluateItem } from '~/composables/filterEngine'
+import type { FilterDimension } from '~/composables/filterTypes'
+
+const mockDim = (id: string, sets: Record<string, string[]>): FilterDimension => ({
+  id, label: id, group: 'Type', ops: ['eq'],
+  expandsTypeCategory: id === 'type.name',
+  loadOptions: () => Object.keys(sets),
+  evaluate: (_ctx, _op, value) => new Set(sets[String(value)] ?? [])
+})
+
+describe('evaluateItem', () => {
+  it('returns null for inactive single condition', () => {
+    const ctx = makeCtx({ dim: () => mockDim('any', {}) })
+    const item: ChainItem = {
+      kind: 'single',
+      condition: { id: 'c1', dimensionId: 'any', op: 'eq', value: '' }
+    }
+    expect(evaluateItem(item, ctx, true)).toBeNull()
+  })
+  it('evaluates active single condition', () => {
+    const dim = mockDim('mfg', { Trane: ['e1', 'e2'] })
+    const ctx = makeCtx({ dim: () => dim })
+    const item: ChainItem = {
+      kind: 'single',
+      condition: { id: 'c1', dimensionId: 'mfg', op: 'eq', value: 'Trane' }
+    }
+    expect([...evaluateItem(item, ctx, false)!].sort()).toEqual(['e1', 'e2'])
+  })
+  it('returns null for orGroup with all inactive conditions', () => {
+    const ctx = makeCtx({ dim: () => mockDim('mfg', {}) })
+    const item: ChainItem = {
+      kind: 'orGroup',
+      id: 'g1',
+      conditions: [
+        { id: 'c1', dimensionId: 'mfg', op: 'eq', value: '' },
+        { id: 'c2', dimensionId: 'mfg', op: 'eq', value: undefined }
+      ]
+    }
+    expect(evaluateItem(item, ctx, false)).toBeNull()
+  })
+  it('unions orGroup sub-conditions', () => {
+    const dim = mockDim('mfg', { Trane: ['e1'], Carrier: ['e2'] })
+    const ctx = makeCtx({ dim: () => dim })
+    const item: ChainItem = {
+      kind: 'orGroup',
+      id: 'g1',
+      conditions: [
+        { id: 'c1', dimensionId: 'mfg', op: 'eq', value: 'Trane' },
+        { id: 'c2', dimensionId: 'mfg', op: 'eq', value: 'Carrier' }
+      ]
+    }
+    expect([...evaluateItem(item, ctx, false)!].sort()).toEqual(['e1', 'e2'])
+  })
+  it('expands type.name only when isFirst', () => {
+    const comps = [
+      { modelId: 'M', externalId: 'e1', dbId: 0, name: 'C1', typeName: 'T1' },
+      { modelId: 'M', externalId: 'e2', dbId: 0, name: 'C2', typeName: 'T2' }
+    ] as any
+    const dim = mockDim('type.name', { T1: ['e1'] })
+    const ctx = makeCtx({
+      components: comps,
+      byExternalId: new Map(comps.map((c: any) => [c.externalId, c])),
+      types: new Map([
+        ['T1', { modelId: 'M', name: 'T1', category: 'cat-A' } as any],
+        ['T2', { modelId: 'M', name: 'T2', category: 'cat-A' } as any]
+      ]),
+      byType: new Map([['T1', new Set(['e1'])], ['T2', new Set(['e2'])]]),
+      dim: () => dim
+    })
+    const item: ChainItem = {
+      kind: 'single',
+      condition: { id: 'c1', dimensionId: 'type.name', op: 'eq', value: 'T1' }
+    }
+    expect([...evaluateItem(item, ctx, true)!].sort()).toEqual(['e1', 'e2'])
+    expect([...evaluateItem(item, ctx, false)!].sort()).toEqual(['e1'])
+  })
+})
