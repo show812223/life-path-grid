@@ -1,0 +1,19 @@
+node_modules
+.nuxt
+.output
+.data
+dist
+.DS_Store
+
+# Tauri
+src-tauri/target
+
+# Sample model data — too large for git; distribute separately
+public/data/
+
+# IDE
+.idea/
+
+# Local HTML snapshots
+index_1.html
+index_2.html

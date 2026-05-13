@@ -1,0 +1,84 @@
+:root {
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --text: #0F172A;
+  --text-soft: #475569;
+  --text-muted: #94A3B8;
+  --border: #E5E7EB;
+  --border-strong: #CBD5E1;
+  --primary: #2563EB;
+  --primary-soft: #DBEAFE;
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
+
+  --font-sans: 'Manrope', 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+}
+
+html, body, #__nuxt {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01', 'cv01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.v-application, .v-application__wrap {
+  background: var(--bg) !important;
+  font-family: var(--font-sans) !important;
+}
+
+/* utility typography */
+.t-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.t-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.t-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+/* Vuetify overrides for tighter SaaS feel */
+.v-btn {
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.v-card {
+  background: var(--surface);
+  transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.v-card--variant-flat[border] { box-shadow: var(--shadow-sm); }
+
+.v-card.is-hover:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.v-list-item-title,
+.v-list-item-subtitle {
+  font-family: var(--font-sans);
+}
+
+::selection { background: var(--primary-soft); color: var(--text); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

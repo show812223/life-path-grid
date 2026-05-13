@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SelectedElement } from '~/components/ForgeViewer.client.vue'
-import { useCobieStore, type ExtractedComponent, type ExtractedType, type ExtractedSpace } from '~/composables/useCobieStore'
+import { useCobieStore } from '~/composables/useCobieStore'
+import type { CobieComponent, CobieType, CobieSpace } from '~/composables/cobieTypes'
 import type { FilterMode } from '~/composables/useCobieFilter'
 
 const props = defineProps<{
@@ -15,9 +16,9 @@ const emit = defineEmits<{
 
 const store = useCobieStore()
 
-const component = ref<ExtractedComponent | undefined>()
-const type = ref<ExtractedType | undefined>()
-const space = ref<ExtractedSpace | undefined>()
+const component = ref<CobieComponent | undefined>()
+const type = ref<CobieType | undefined>()
+const space = ref<CobieSpace | undefined>()
 const systemNames = ref<string[]>([])
 const sameCategoryTypeNames = ref<string[]>([])
 const loading = ref(false)
