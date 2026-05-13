@@ -1,7 +1,7 @@
 # 設備檔案上傳設計（COBie Document 對齊）
 
 日期：2026-05-13
-分支建議：`refactor/cobie-rename`（Phase 0）→ `feature/equipment-document-upload`（Phase 1+）
+分支建議：`feature/equipment-document-upload`（單一 PR）
 
 ---
 
@@ -213,17 +213,17 @@ Document sheet 每列的 `Directory` 寫 `docs/`、`File` 寫原始檔名（不�
 
 ---
 
-## 階段切分（實作順序）
+## 實作順序（單一 PR、依序 commit）
 
-| 階段 | 內容 | PR 邊界 |
+| 階段 | 內容 | commit 邊界 |
 |---|---|---|
-| Phase 0 | 命名重構 `Extracted*` → `Cobie*` | PR #1 |
-| Phase 1 | CobieDocument 欄位擴充 + SQLite migration + 匯入解析展平 | PR #2 |
-| Phase 2 | Tauri 檔案儲存 commands | PR #3 |
-| Phase 3 | UI：上傳 / 列表 / 下載 / 刪除 / 取代 / 缺檔補檔 | PR #4 |
-| Phase 4 | zip 匯出與匯入 | PR #5 |
+| Phase 0 | 命名重構 `Extracted*` → `Cobie*` | 1 commit（純 rename） |
+| Phase 1 | CobieDocument 欄位擴充 + SQLite migration + 匯入解析展平 | 1–2 commits |
+| Phase 2 | Tauri 檔案儲存 commands | 1 commit |
+| Phase 3 | UI：上傳 / 列表 / 下載 / 刪除 / 取代 / 缺檔補檔 | 數個 commits |
+| Phase 4 | zip 匯出與匯入 | 1–2 commits |
 
-每個 PR 都要可獨立跑通 typecheck + 現有測試；Phase 1 之後 UI 仍可只顯示讀取，不破壞現有畫面。
+每個階段完成時跑 `pnpm typecheck` + 現有 vitest；最終一個 PR 送 review。commit 切乾淨方便逐段審查（特別是 Phase 0 rename 大但無邏輯變動）。
 
 ---
 
